@@ -20,6 +20,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_PAT }}
+          persist-credentials: true
 
       # 2️⃣ Setup Node.js
       - name: Setup Node.js
