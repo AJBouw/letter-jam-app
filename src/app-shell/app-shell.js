@@ -1,36 +1,39 @@
-import { LitElement, html } from 'lit';
-import { startQuickGame } from '../features/model/api/game-api.js';
+import { LitElement, html, css } from 'lit';
+import { mount as mountBootstrap } from './bootstrap.js';
 
-export class AppShell extends LitElement {
-    render() {
-        return html`
-      <h1>Letter Jam</h1>
-      <button @click=${this.quickGame}>Start Quick Game</button>
-      <div id="outlet"></div>
+// ✅ Define <app-shell> as root component
+if (!customElements.get('app-shell')) {
+    customElements.define('app-shell', class AppShell extends LitElement {
+        static styles = css`
+      :host {
+        display: block;
+        font-family: Arial, sans-serif;
+      }
+      #app {
+        padding: 1rem;
+      }
     `;
-    }
 
-    firstUpdated() {
-        const outlet = this.shadowRoot.getElementById('outlet');
-        // Initialize router here
-    }
-
-    async quickGame() {
-        const player = {
-            name: 'A',
-            language: 'dutch',
-            email: 'email@email.email'
-        };
-
-        try {
-            const result = await startQuickGame(player);
-            console.log('Game started:', result);
-            alert('Quick game started!');
-        } catch (err) {
-            console.error(err);
-            alert('Error starting game');
+        render() {
+            return html`<div id="app"></div>`;
         }
-    }
+
+        firstUpdated() {
+            // Mount bootstrap.js logic into #app container
+            // bootstrap.js itself already handles routing, container creation, and rendering
+            mountBootstrap(document.getElementById('app'));
+        }
+    });
 }
 
-customElements.define('app-shell', AppShell);
+// ✅ Optional mount/unmount API
+export function mount(container, props = {}) {
+    const el = document.createElement('app-shell');
+    Object.assign(el, props);
+    container.innerHTML = '';
+    container.appendChild(el);
+}
+
+export function unmount(container) {
+    container.innerHTML = '';
+}
