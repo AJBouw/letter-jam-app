@@ -1,5 +1,5 @@
 import { LitElement, html, css } from 'lit';
-import { QuickGameViewModel } from './../view-model/quick-game-view-model.js';
+import { QuickGameViewModel } from '../view-model/quick-game-view-model.js';
 
 export class FeatureQuickGame extends LitElement {
     static styles = css`

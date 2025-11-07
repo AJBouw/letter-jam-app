@@ -1,0 +1,45 @@
+name: Build & Test Frontend Docker Image
+
+# Manual trigger or push to main/develop
+on:
+  workflow_dispatch:    # manual trigger
+  push:
+    branches: [main, develop]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -f app-shell/Dockerfile -t letter-jam-frontend:latest .
+
+      # 3️⃣ Optional: Run the container to test
+      - name: Run Docker container (test)
+        run: |
+          # Stop/remove existing container if exists
+          if [ $(docker ps -aq -f name=letter-jam-frontend-test) ]; then
+            docker rm -f letter-jam-frontend-test
+          fi
+          # Run container in detached mode
+          docker run -d -p 8080:80 --name letter-jam-frontend-test letter-jam-frontend:latest
+          
+          # Wait a few seconds to let the server start
+          sleep 5
+          
+          # Simple test: check if the frontend responds
+          if ! curl -f http://localhost:8080 > /dev/null; then
+            echo "Frontend did not start properly"
+            exit 1
+          fi
+
+      # 4️⃣ Optional: Stop the container after test
+      - name: Stop test container
+        run: |
+          docker rm -f letter-jam-frontend-test

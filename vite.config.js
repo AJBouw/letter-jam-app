@@ -13,9 +13,9 @@ export default defineConfig({
     server: {
         resolve: {
             alias: {
-                '/features/feature-home/dist': path.resolve(__dirname, '../features/feature-home/dist'),
-                '/features/feature-login/dist': path.resolve(__dirname, '../features/feature-login/dist'),
-                '/features/feature-quick-game/dist': path.resolve(__dirname, '../features/feature-quick-game/dist'),
+                '/features/feature-home/dist': path.resolve(__dirname, './features/feature-home/dist'),
+                '/features/feature-login/dist': path.resolve(__dirname, './features/feature-login/dist'),
+                '/features/feature-quick-game/dist': path.resolve(__dirname, './features/feature-quick-game/dist'),
             }
         },
         // Respond to all network requests

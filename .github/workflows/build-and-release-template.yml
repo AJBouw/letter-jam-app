@@ -1,0 +1,49 @@
+name: Build & Release Template
+on:
+  workflow_call:
+    inputs:
+      feature-path:
+        required: true
+        type: string
+      feature-name:
+        required: true
+        type: string
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          cd ${{ inputs.feature-path }}
+          npm ci
+
+      - name: Build feature
+        run: |
+          cd ${{ inputs.feature-path }}
+          npm run build
+
+      - name: Create version tag
+        id: tag
+        run: |
+          VERSION=v$(date +'%Y%m%d%H%M')
+          git tag ${{ inputs.feature-name }}-$VERSION
+          git push origin ${{ inputs.feature-name }}-$VERSION
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.feature-name }}-${{ steps.tag.outputs.version }}
+          name: Build ${{ inputs.feature-name }} ${{ steps.tag.outputs.version }}
+          files: |
+            ${{ inputs.feature-path }}/dist/**

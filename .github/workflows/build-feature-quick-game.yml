@@ -1,0 +1,13 @@
+name: Build Feature Quick Game
+on:
+  push:
+    branches: [feature-deployment]
+    paths:
+      - '../../src/features/feature-quick-game/**'
+
+jobs:
+  call-template:
+    uses: ./.github/workflows/build-release-template.yml
+    with:
+      feature-path: 'features/feature-quick-game'
+      feature-name: 'feature-quick-game'

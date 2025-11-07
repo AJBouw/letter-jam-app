@@ -1,0 +1,13 @@
+name: Build App Shell
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app-shell/**'
+
+jobs:
+  call-template:
+    uses: ./.github/workflows/build-release-template.yml
+    with:
+      feature-path: 'app-shell'
+      feature-name: 'app-shell'

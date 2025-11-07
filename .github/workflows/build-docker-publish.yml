@@ -1,0 +1,34 @@
+name: Build & Push Frontend Docker Image
+
+# Manual trigger for testing or deployment
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -f app-shell/Dockerfile -t letter-jam-frontend:latest .
+
+      # Optional: run the image to test locally in CI
+      - name: Run Docker image (test)
+        run: |
+          docker run -d -p 8080:80 --name letter-jam-frontend-test letter-jam-frontend:latest
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        run: |
+          docker tag letter-jam-frontend:latest ghcr.io/AJBouw/letter-jam-frontend:latest
+          docker push ghcr.io/AJBouw/letter-jam-frontend:latest

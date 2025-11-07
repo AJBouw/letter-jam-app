@@ -1,0 +1,13 @@
+name: Build Feature Login
+on:
+  push:
+    branches: [feature-deployment]
+    paths:
+      - '../../src/features/feature-login/**'
+
+jobs:
+  call-template:
+    uses: ./.github/workflows/build-release-template.yml
+    with:
+      feature-path: 'features/feature-login'
+      feature-name: 'feature-login'
