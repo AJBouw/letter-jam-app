@@ -9,6 +9,9 @@ on:
       feature-name:
         required: true
         type: string
+    secrets:
+      GH_PAT:
+        required: true
 
 jobs:
   build-and-release:

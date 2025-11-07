@@ -13,3 +13,4 @@ jobs:
     with:
       feature-path: 'src/features/feature-quick-game'
       feature-name: 'feature-quick-game'
+    secrets: inherit
