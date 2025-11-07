@@ -13,6 +13,9 @@ on:
       GH_PAT:
         required: true
 
+permissions:
+  contents: write
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
