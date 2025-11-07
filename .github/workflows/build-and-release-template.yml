@@ -18,26 +18,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repo using PAT
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_PAT }}
 
+      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: |
           cd ${{ inputs.feature-path }}
           npm ci
 
+      # 4️⃣ Build feature/app-shell
       - name: Build feature
         run: |
           cd ${{ inputs.feature-path }}
           npm run build
 
+      # 5️⃣ Create version tag
       - name: Create version tag
         id: tag
         run: |
@@ -46,6 +51,7 @@ jobs:
           git push origin ${{ inputs.feature-name }}-$VERSION
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      # 6️⃣ Create GitHub release
       - name: GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -54,7 +60,8 @@ jobs:
           files: |
             ${{ inputs.feature-path }}/dist/**
 
-      - name: Optional: Build & test Docker image
+      # 7️⃣ Optional: Build & test Docker image (only for app-shell)
+      - name: Build & test Docker image
         if: ${{ inputs.feature-name == 'app-shell' }}
         run: |
           docker build -f src/app-shell/Dockerfile -t letter-jam-frontend:latest .
