@@ -1,10 +1,11 @@
 name: Build Feature Quick Game
+
 on:
   push:
     branches: [feature-deployment]
     paths:
-      - '../../src/features/feature-quick-game/**'
-  workflow_dispatch:
+      - 'features/feature-quick-game/**'  # correct relative path
+  workflow_dispatch:   # manual trigger
 
 jobs:
   call-template:
