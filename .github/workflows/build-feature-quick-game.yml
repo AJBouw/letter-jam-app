@@ -9,7 +9,7 @@ on:
 
 jobs:
   call-template:
-    uses: ./.github/workflows/build-release-template.yml
+    uses: ./.github/workflows/build-and-release-template.yml
     with:
       feature-path: 'features/feature-quick-game'
       feature-name: 'feature-quick-game'
