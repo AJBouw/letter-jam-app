@@ -4,6 +4,7 @@ on:
     branches: [feature-deployment]
     paths:
       - '../../src/features/feature-login/**'
+  workflow_dispatch:
 
 jobs:
   call-template:

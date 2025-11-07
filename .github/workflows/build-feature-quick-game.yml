@@ -4,6 +4,7 @@ on:
     branches: [feature-deployment]
     paths:
       - '../../src/features/feature-quick-game/**'
+  workflow_dispatch:
 
 jobs:
   call-template:
