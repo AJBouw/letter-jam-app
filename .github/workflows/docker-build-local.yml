@@ -50,7 +50,7 @@ jobs:
 
       # 6️⃣ Upload tar as artifact
       - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: letter-jam-frontend
           path: letter-jam-frontend.tar
