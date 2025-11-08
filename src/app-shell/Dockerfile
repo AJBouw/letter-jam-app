@@ -2,22 +2,19 @@
 FROM node:20-alpine AS build
 
 WORKDIR /app
-
-# Copy entire project
 COPY . .
-
-# Install dependencies
 RUN npm ci
+RUN npm run build
 
-# Remove default nginx html
+# Stage 1: Serve with nginx
+FROM nginx:alpine
+
+# Clean default html
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy built dist to nginx html
+# Copy compiled dist and assets from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
-
-# Copy static assets (if you have src/assets or other static files)
 COPY --from=build /app/src/assets /usr/share/nginx/html/assets
 
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]
