@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
-import { getFeatureURL, render } from '../../../app-shell/micro-front-end-renderer.js';
+import { render } from '../../../app-shell/micro-front-end-renderer.js';
+import { getFeatureURL } from "../../../app-shell/utils/feature-loader.js";
 
 /**
  * FeatureHome LitElement class

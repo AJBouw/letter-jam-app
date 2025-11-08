@@ -1,4 +1,3 @@
-// src/router/index.js
 import { Router } from '@vaadin/router';
 
 export function initRouter() {

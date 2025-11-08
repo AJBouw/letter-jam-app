@@ -1,7 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { mount as mountBootstrap } from './bootstrap.js';
 
-// ✅ Define <app-shell> as root component
+// Define <app-shell> as root component
 if (!customElements.get('app-shell')) {
     customElements.define('app-shell', class AppShell extends LitElement {
         static styles = css`
@@ -27,7 +27,6 @@ if (!customElements.get('app-shell')) {
 }
 
 // TODO: check when needed
-// // ✅ Optional mount/unmount API
 // export function mount(container, props = {}) {
 //     const el = document.createElement('app-shell');
 //     Object.assign(el, props);

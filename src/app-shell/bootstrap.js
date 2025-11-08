@@ -50,13 +50,11 @@ async function mountRoute(path) {
     }
 }
 
-// Simple router
 function router() {
     const path = window.location.pathname || '/';
     mountRoute(path);
 }
 
-// Listen to browser navigation events
 window.addEventListener('popstate', router);
 window.addEventListener('load', router);
 

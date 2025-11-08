@@ -44,15 +44,15 @@ if (!customElements.get('feature-login')) {
     customElements.define('feature-login', FeatureLogin);
 }
 
-// Public API
-export function mount(container, props = {}) {
-    if (!container) return;
-    const el = document.createElement('feature-login');
-    Object.assign(el, props);
-    container.innerHTML = '';
-    container.appendChild(el);
-}
-
-export function unmount(container) {
-    container.innerHTML = '';
-}
+// TODO: check when needed
+// export function mount(container, props = {}) {
+//     if (!container) return;
+//     const el = document.createElement('feature-login');
+//     Object.assign(el, props);
+//     container.innerHTML = '';
+//     container.appendChild(el);
+// }
+//
+// export function unmount(container) {
+//     container.innerHTML = '';
+// }

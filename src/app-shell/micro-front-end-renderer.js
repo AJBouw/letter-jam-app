@@ -1,30 +1,4 @@
-import { details } from './micro-front-end-config.js';
-
-/**
- * Dynamically builds the correct URL for a micro frontend (feature)
- * depending on environment: local (localhost) or CDN (GitHub release).
- */
-export function getFeatureURL(featureName, fileName) {
-    const isLocal = window.location.hostname === 'localhost';
-
-    if (isLocal) {
-        // 🔹 Local development path (served by Vite dev servers)
-        return `/src/features/${featureName}/src/${fileName}`;
-    } else {
-        // 🔹 Production CDN path
-        const version = details[featureName]?.version || '1.0.0';
-        // The username is provided via environment variable during build
-        const githubUser = import.meta.env.VITE_GITHUB_USER;
-
-        if (!githubUser) {
-            console.error(
-                '❌ Missing VITE_GITHUB_USER environment variable! Ensure it is set in GitHub Actions or .env file.'
-            );
-        }
-
-        return `https://cdn.jsdelivr.net/gh/${githubUser}/letter-jam-app@${featureName}-v${version}/src/features/${featureName}/dist/${fileName}`;
-    }
-}
+import { getFeatureURL } from './utils/feature-loader.js'
 
 /**
  * Dynamically loads and mounts a micro frontend (feature) into a given container.
@@ -48,7 +22,7 @@ export async function render(container, fileURL, options = {}) {
     const featureURL = fileURL || getFeatureURL(featureName, `${featureName}.js`);
 
     if (!container) {
-        console.error(`❌ Container not found for ${featureName}`);
+        console.error(`Container not found for ${featureName}`);
         return;
     }
 
@@ -57,11 +31,11 @@ export async function render(container, fileURL, options = {}) {
         if (module && typeof module.mount === 'function') {
             container.innerHTML = '';
             module.mount(container, options.props || {});
-            console.log(`✅ Loaded ${featureName} from ${featureURL}`);
+            console.log(`Loaded ${featureName} from ${featureURL}`);
         } else {
-            console.error(`❌ ${featureName} does not export mount(container)`);
+            console.error(`${featureName} does not export mount(container)`);
         }
     } catch (err) {
-        console.error(`❌ Failed to load ${featureName}:`, err);
+        console.error(`Failed to load ${featureName}:`, err);
     }
 }
