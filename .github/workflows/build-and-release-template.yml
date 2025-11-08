@@ -86,6 +86,7 @@ jobs:
             git commit -m "Build ${{ inputs.feature-name }} for JSDelivr [skip ci]"
           else
             echo "✅ No changes to commit for ${{ inputs.feature-name }}"
+          fi
 
           # Push cumulative branch
           git push -u origin build-dist --force
