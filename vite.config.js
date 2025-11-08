@@ -2,12 +2,19 @@ import {defineConfig} from 'vite';
 import path from 'path';
 
 export default defineConfig({
+    base: '/',
     build: {
-        root: 'src/app-shell/',
         outDir: 'dist', // Output folder (relative to project root)
         emptyOutDir: true, // Clear old files before building
         sourcemap: false // Optional: generate source maps
     },
+    rollupOptions: {
+        // Optional: if you want multiple entry points (app-shell + features)
+        input: {
+            main: path.resolve(__dirname, 'index.html')
+
+        }
+    }
 
     // Adjust Vites dev server to work with DDEV
     // https://vitejs.dev/config/server-options.html
