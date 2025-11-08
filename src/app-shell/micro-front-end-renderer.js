@@ -1,49 +1,67 @@
-export async function render(container, importFile, options = {}) {
-    try {
-        // Display loading
-        container.innerHTML = options.loadingTemplate || '<p class="spinner">Loading...</p>';
+import { details } from './micro-front-end-config.js';
 
-        // If lazy loading is enabled, defer loading until container is visible
-        if (options.lazyLoad && 'IntersectionObserver' in window) {
-            const observer = new IntersectionObserver(async (entries) => {
-                if (entries[0].isIntersecting) {
-                    observer.disconnect();
-                    await actuallyRender(container, importFile, options);
-                }
-            });
-            observer.observe(container);
-        } else {
-            // Immediate render
-            await actuallyRender(container, importFile, options);
+/**
+ * Dynamically builds the correct URL for a micro frontend (feature)
+ * depending on environment: local (localhost) or CDN (GitHub release).
+ */
+export function getFeatureURL(featureName, fileName) {
+    const isLocal = window.location.hostname === 'localhost';
+
+    if (isLocal) {
+        // 🔹 Local development path (served by Vite dev servers)
+        return `../features/${featureName}/dist/${fileName}`;
+    } else {
+        // 🔹 Production CDN path
+        const version = details[featureName]?.version || '1.0.0';
+        // The username is provided via environment variable during build
+        const githubUser = import.meta.env.VITE_GITHUB_USER;
+
+        if (!githubUser) {
+            console.error(
+                '❌ Missing VITE_GITHUB_USER environment variable! Ensure it is set in GitHub Actions or .env file.'
+            );
         }
 
-    } catch (err) {
-        console.error('Failed to render micro-frontend:', err);
-        container.innerHTML = options.errorTemplate || '<p class="error">Error loading app</p>';
+        return `https://cdn.jsdelivr.net/gh/${githubUser}/letter-jam-app@${featureName}-v${version}/src/features/${featureName}/dist/${fileName}`;
     }
 }
 
-// Helper function to actually import + mount the micro-frontend
-async function actuallyRender(container, importFile, options) {
+/**
+ * Dynamically loads and mounts a micro frontend (feature) into a given container.
+ *
+ * This function:
+ *   1. Resolves the feature bundle URL via `getFeatureURL` (local dev or CDN)
+ *   2. Dynamically imports the feature’s JavaScript module
+ *   3. Clears the container’s previous content and calls the feature’s exported `mount(container, props)` function
+ *   4. Passes optional `props` to the feature during mounting
+ *
+ * Requirements for a feature bundle:
+ *   - Must export a `mount(container, props)` function
+ *   - Should handle its own internal state and subcomponents
+ *
+ * @param {HTMLElement} container - The DOM element where the feature will be mounted
+ * @param {string} featureURL - The URL of the feature JS bundle (from getFeatureURL)
+ * @param {object} [options] - Optional options to pass to the feature, e.g., { props: {...} }
+ */
+export async function render(container, fileURL, options = {}) {
+    const featureName = options.featureName || 'unknown';
+    const featureURL = fileURL || getFeatureURL(featureName, `${featureName}.js`);
+
+    if (!container) {
+        console.error(`❌ Container not found for ${featureName}`);
+        return;
+    }
+
     try {
-        const module = await import(importFile);
-
-        // Cleanup previous micro-frontend if it exists
-        if (container.currentApp) {
-            try {
-                container.currentApp.unmount?.();
-            } catch (e) {
-                console.warn(`Unmount failed for ${importFile}`, e);
-            }
-            container.innerHTML = ''; // clear DOM
+        const module = await import(/* @vite-ignore */ featureURL);
+        if (module && typeof module.mount === 'function') {
+            container.innerHTML = '';
+            module.mount(container, options.props || {});
+            console.log(`✅ Loaded ${featureName} from ${featureURL}`);
+        } else {
+            console.error(`❌ ${featureName} does not export mount(container)`);
         }
-
-        // Mount the new micro-frontend
-        module.mount(container, options.props || {});
-        container.currentApp = module;
-
     } catch (err) {
-        console.error('Error loading module:', err);
-        container.innerHTML = options.errorTemplate || '<p class="error">Error loading app</p>';
+        console.error(`❌ Failed to load ${featureName}:`, err);
     }
 }
