@@ -14,7 +14,7 @@ export default defineConfig({
             main: path.resolve(__dirname, 'index.html')
 
         }
-    }
+    },
 
     // Adjust Vites dev server to work with DDEV
     // https://vitejs.dev/config/server-options.html
