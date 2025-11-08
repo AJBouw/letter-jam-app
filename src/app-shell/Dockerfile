@@ -1,27 +1,21 @@
-# Stage 0: Build Node app
-FROM node:20-alpine AS build
+# Stage 1: Use Node to copy artifacts (no build inside Docker)
+FROM nginx:alpine AS production
 
-WORKDIR /app
+# Create directories for features
+RUN mkdir -p /usr/share/nginx/html/src/features/feature-home/dist \
+    /usr/share/nginx/html/src/features/feature-login/dist \
+    /usr/share/nginx/html/src/features/feature-quick-game/dist
 
-# Copy entire project
-COPY . .
+# Copy prebuilt app-shell
+COPY app-shell/dist /usr/share/nginx/html
 
-# Install dependencies
-RUN npm ci
-
-# Build app-shell (from root, index.html is here)
-RUN npm run build
-
-# Stage 1: Serve with nginx
-FROM nginx:alpine
-
-# Copy built app-shell dist
-COPY --from=build /app/dist /usr/share/nginx/html
-
-# Copy each feature dist folder to match dynamic import paths
+# Copy prebuilt feature artifacts
 COPY features/feature-home/dist /usr/share/nginx/html/src/features/feature-home/dist
 COPY features/feature-login/dist /usr/share/nginx/html/src/features/feature-login/dist
 COPY features/feature-quick-game/dist /usr/share/nginx/html/src/features/feature-quick-game/dist
 
+# Expose nginx port
 EXPOSE 80
+
+# Default command
 CMD ["nginx", "-g", "daemon off;"]
