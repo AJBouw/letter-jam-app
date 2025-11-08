@@ -44,6 +44,7 @@ jobs:
       - name: Build feature
         run: |
           cd ${{ inputs.feature-path }}
+          echo "VITE_GITHUB_USER=${{ secrets.VITE_GITHUB_USER }}" >> .env
           npm run build
 
       # 5️⃣ Create version tag
