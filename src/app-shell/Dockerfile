@@ -19,9 +19,9 @@ FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy each feature dist folder to match dynamic import paths
-COPY --from=build /app/src/features/feature-home/dist /usr/share/nginx/html/src/features/feature-home/dist
-COPY --from=build /app/src/features/feature-login/dist /usr/share/nginx/html/src/features/feature-login/dist
-COPY --from=build /app/src/features/feature-quick-game/dist /usr/share/nginx/html/src/features/feature-quick-game/dist
+COPY features/feature-home/dist /usr/share/nginx/html/src/features/feature-home/dist
+COPY features/feature-login/dist /usr/share/nginx/html/src/features/feature-login/dist
+COPY features/feature-quick-game/dist /usr/share/nginx/html/src/features/feature-quick-game/dist
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
