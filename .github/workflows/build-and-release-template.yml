@@ -82,5 +82,5 @@ jobs:
           echo "✅ Docker image built successfully"
 
           echo "🔹 Running Docker image test..."
-          docker run --rm letter-jam-frontend:latest
+          docker run --rm -p 8080:80 letter-jam-frontend:latest
           echo "✅ Docker image ran successfully"
