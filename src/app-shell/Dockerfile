@@ -3,25 +3,20 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Copy root package.json & lock
-COPY package*.json ./
+# Copy entire project
+COPY . .
 
 # Install dependencies
 RUN npm ci
 
-# Copy app-shell source
-COPY src ./src
-
-# Switch to app-shell folder for build
-WORKDIR /app/src/app-shell
-
-# Build app-shell
+# Build app-shell (from root, index.html is here)
 RUN npm run build
 
 # Stage 1: Serve with nginx
 FROM nginx:alpine
 
-COPY --from=build /app/src/app-shell/dist /usr/share/nginx/html
+# Copy built dist to nginx html
+COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

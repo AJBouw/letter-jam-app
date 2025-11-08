@@ -3,6 +3,7 @@ import path from 'path';
 
 export default defineConfig({
     build: {
+        root: 'src/app-shell/',
         outDir: 'dist', // Output folder (relative to project root)
         emptyOutDir: true, // Clear old files before building
         sourcemap: false // Optional: generate source maps
