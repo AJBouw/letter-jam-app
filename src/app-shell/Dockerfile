@@ -1,32 +1,39 @@
-# -------------------------------
-# 🧱 Stage 1: Build the app-shell
-# -------------------------------
-FROM node:20 AS build
+# ----------------------------
+# Stage 1: Build
+# ----------------------------
+FROM node:20-alpine AS builder
 
-# Set working directory
+# Set working directory inside the container
 WORKDIR /app
 
-# Copy dependency files
-COPY package*.json ./
-RUN npm ci
+# Copy only package files first (for caching)
+COPY src/app-shell/package*.json ./
 
-# Copy app-shell source
-COPY . .
+# Install dependencies (use install if package-lock.json may be missing)
+RUN npm install
 
-# Build for production
+# Copy the source code
+COPY src/app-shell ./
+
+# Build the app-shell
 RUN npm run build
 
+# ----------------------------
+# Stage 2: Serve
+# ----------------------------
+FROM nginx:alpine
 
-# -------------------------------
-# 🚀 Stage 2: Serve with Nginx
-# -------------------------------
-FROM nginx:stable-alpine
+# Remove default nginx static files
+RUN rm -rf /usr/share/nginx/html/*
 
-# Copy build output to Nginx web root
-COPY --from=build /app/dist /usr/share/nginx/html
+# Copy built files from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose port 80
+# Copy custom nginx config if needed
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port
 EXPOSE 80
 
-# Run Nginx in the foreground
+# Start nginx
 CMD ["nginx", "-g", "daemon off;"]
