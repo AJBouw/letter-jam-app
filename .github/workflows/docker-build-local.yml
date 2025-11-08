@@ -14,52 +14,53 @@ jobs:
       # 1️⃣ Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
+      # 2️⃣ Download artifacts from feature workflows
+      - name: Download feature-home artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: feature-home-dist
+          path: features/feature-home/dist
 
-      # 2️⃣ Build Docker image
+      - name: Download feature-login artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: feature-login-dist
+          path: features/feature-login/dist
+
+      - name: Download feature-quick-game artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: feature-quick-game-dist
+          path: features/feature-quick-game/dist
+
+      - name: Download app-shell artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-shell-dist
+          path: dist
+
+
+      # 3️⃣ Build Docker image using Nginx
       - name: Build Docker image
         run: |
-          docker build --load -f src/app-shell/Dockerfile -t letter-jam-frontend:latest .
+          docker build \
+            -f src/app-shell/Dockerfile \
+            -t letter-jam-frontend:latest \
+            .
 
-      # 2.1️⃣ Save Docker image as tar for download
-      - name: Save Docker image as tar
+      # 4️⃣ Optional: test Docker container
+      - name: Run Docker container for test
         run: |
-          docker save letter-jam-frontend:latest -o letter-jam-frontend.tar
-
-      # 2.2️⃣ Upload Docker image tar as artifact
-      - name: Upload Docker image tar
-        uses: actions/upload-artifact@v4
-        with:
-          name: letter-jam-frontend-image
-          path: letter-jam-frontend.tar
-
-      # 3️⃣ Run the container to test
-      - name: Run Docker container (test)
-        run: |
-          # Remove any existing test container
           if [ $(docker ps -aq -f name=letter-jam-frontend-test) ]; then
             docker rm -f letter-jam-frontend-test
           fi
-
-          # Run container in detached mode
           docker run -d -p 8080:80 --name letter-jam-frontend-test letter-jam-frontend:latest
-
-          # Wait up to 10 seconds, retry every 2 seconds
-          for i in {1..5}; do
-            if curl -f http://localhost:8080 > /dev/null; then
-              echo "✅ Frontend is up and running"
-              break
-            fi
-            echo "Waiting for frontend to start..."
-            sleep 2
-          done
-
-          # Final check
+          sleep 5
           if ! curl -f http://localhost:8080 > /dev/null; then
             echo "❌ Frontend did not start properly"
             exit 1
           fi
 
-      # 4️⃣ Stop and remove the test container
+      # 5️⃣ Stop test container
       - name: Stop test container
-        run: |
-          docker rm -f letter-jam-frontend-test || true
+        run: docker rm -f letter-jam-frontend-test || true
