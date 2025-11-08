@@ -1,10 +1,13 @@
 import {defineConfig} from 'vite';
 import path from 'path';
 
+const featureName = process.env.FEATURE_NAME || '';
+
 export default defineConfig({
     base: '/',
     build: {
-        outDir: 'dist', // Output folder (relative to project root)
+        // outDir: 'dist', // Output folder (relative to project root)
+        outDir: featureName === 'app-shell' ? path.resolve(__dirname, '../../dist') : 'dist',
         emptyOutDir: true, // Clear old files before building
         sourcemap: false // Optional: generate source maps
     },

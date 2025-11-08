@@ -54,7 +54,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.feature-name }}-dist
-          path: ${{ inputs.feature-path }}/dist
+          path: ${{ inputs.feature-name == 'app-shell' && 'dist' || inputs.feature-path + '/dist' }}
 
       # 6️⃣ Optional: Build & Test Docker image (only for app-shell)
       - name: Build Docker Image
