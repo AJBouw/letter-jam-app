@@ -1,25 +1,22 @@
-# src/app-shell/Dockerfile
+# Stage 0: Build Node app
 FROM node:20-alpine AS build
 
-# Set working directory
 WORKDIR /app
 
-# Copy app-shell source
-COPY . .
+# Copy package.json and lock from repo root
+COPY package*.json ./
 
-# Install dependencies
+# Install deps
 RUN npm ci
 
-# Build app
-RUN npm run build
+# Copy app-shell source
+COPY src/app-shell ./src/app-shell
 
-# Serve the built files using a simple web server
+# Build with Vite
+RUN npm run build --prefix src/app-shell
+
+# Stage 1: Serve with nginx
 FROM nginx:alpine
-
-# Copy build output
-COPY --from=build /app/dist /usr/share/nginx/html
-
-# Expose default nginx port
+COPY --from=build /app/src/app-shell/dist /usr/share/nginx/html
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"]
