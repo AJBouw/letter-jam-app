@@ -57,38 +57,38 @@ jobs:
           echo "✅ Dist path is $DIST_PATH"
 
       # 6️⃣ Prepare branch and copy built files (cumulative)
-  - name: Prepare JSDelivr branch
-    run: |
-      git config --global user.name "github-actions[bot]"
-      git config --global user.email "github-actions[bot]@users.noreply.github.com"
-      
-      # Fetch remote branch if exists
-      git fetch origin build-dist || true
-      
-      # Checkout existing build-dist or create new
-      if git show-ref --quiet refs/heads/build-dist; then
-        git checkout build-dist
-      else
-        git checkout -b build-dist
-      fi
-      
-      # Make sure centralized folder for this feature exists
-      mkdir -p jsdelivr-dist/${{ inputs.feature-name }}
-      
-      # Copy the newly built feature into jsdelivr-dist/<feature-name>
-      cp -r ${{ steps.dist-path.outputs.DIST_PATH }}/* jsdelivr-dist/${{ inputs.feature-name }}/
-      
-      # Add new or updated files
-      git add -f jsdelivr-dist/${{ inputs.feature-name }}
-      
-      # Commit only if there are changes
-      if ! git diff --cached --quiet; then
-        git commit -m "Build ${{ inputs.feature-name }} for JSDelivr [skip ci]"
-      else
-        echo "✅ No changes to commit for ${{ inputs.feature-name }}"
-      fi
-
-      # 7️⃣ Push to build-dist branch
-      - name: Push to build-dist branch
+      - name: Prepare JSDelivr branch
         run: |
-          git push -u origin build-dist --force
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Fetch remote branch if exists
+          git fetch origin build-dist || true
+          
+          # Checkout existing build-dist or create new
+          if git show-ref --quiet refs/heads/build-dist; then
+            git checkout build-dist
+          else
+            git checkout -b build-dist
+          fi
+          
+          # Make sure centralized folder for this feature exists
+          mkdir -p jsdelivr-dist/${{ inputs.feature-name }}
+          
+          # Copy the newly built feature into jsdelivr-dist/<feature-name>
+          cp -r ${{ steps.dist-path.outputs.DIST_PATH }}/* jsdelivr-dist/${{ inputs.feature-name }}/
+          
+          # Add new or updated files
+          git add -f jsdelivr-dist/${{ inputs.feature-name }}
+          
+          # Commit only if there are changes
+          if ! git diff --cached --quiet; then
+            git commit -m "Build ${{ inputs.feature-name }} for JSDelivr [skip ci]"
+          else
+            echo "✅ No changes to commit for ${{ inputs.feature-name }}"
+          fi
+    
+          # 7️⃣ Push to build-dist branch
+          - name: Push to build-dist branch
+            run: |
+              git push -u origin build-dist --force
