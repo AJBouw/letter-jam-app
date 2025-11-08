@@ -1,8 +1,8 @@
 name: Build & Test Frontend Docker Image
 
-# Manual trigger or push to main/develop
+# Trigger manually or on push to main/develop
 on:
-  workflow_dispatch:    # manual trigger
+  workflow_dispatch:    # Manual trigger
   push:
     branches: [main, develop]
 
@@ -18,28 +18,36 @@ jobs:
       # 2️⃣ Build Docker image
       - name: Build Docker image
         run: |
-          docker build -f app-shell/Dockerfile -t letter-jam-frontend:latest .
+          docker build --load -f src/app-shell/Dockerfile -t letter-jam-frontend:latest .
 
-      # 3️⃣ Optional: Run the container to test
+      # 3️⃣ Run the container to test
       - name: Run Docker container (test)
         run: |
-          # Stop/remove existing container if exists
+          # Remove any existing test container
           if [ $(docker ps -aq -f name=letter-jam-frontend-test) ]; then
             docker rm -f letter-jam-frontend-test
           fi
+
           # Run container in detached mode
           docker run -d -p 8080:80 --name letter-jam-frontend-test letter-jam-frontend:latest
-          
-          # Wait a few seconds to let the server start
-          sleep 5
-          
-          # Simple test: check if the frontend responds
+
+          # Wait up to 10 seconds, retry every 2 seconds
+          for i in {1..5}; do
+            if curl -f http://localhost:8080 > /dev/null; then
+              echo "✅ Frontend is up and running"
+              break
+            fi
+            echo "Waiting for frontend to start..."
+            sleep 2
+          done
+
+          # Final check
           if ! curl -f http://localhost:8080 > /dev/null; then
-            echo "Frontend did not start properly"
+            echo "❌ Frontend did not start properly"
             exit 1
           fi
 
-      # 4️⃣ Optional: Stop the container after test
+      # 4️⃣ Stop and remove the test container
       - name: Stop test container
         run: |
-          docker rm -f letter-jam-frontend-test
+          docker rm -f letter-jam-frontend-test || true
