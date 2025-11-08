@@ -14,7 +14,10 @@ export default defineConfig({
     rollupOptions: {
         // Optional: if you want multiple entry points (app-shell + features)
         input: {
-            main: path.resolve(__dirname, 'index.html')
+            main: path.resolve(__dirname, 'index.html'),
+            'feature-home': 'src/features/feature-home/feature-home.js',
+            'feature-quick-game': 'src/features/feature-quick-game/feature-quick-game.js',
+            'feature-login': 'src/features/feature-login/feature-login.js'
 
         }
     },

@@ -9,7 +9,7 @@ export function getFeatureURL(featureName, fileName) {
 
     if (isLocal) {
         // 🔹 Local development path (served by Vite dev servers)
-        return `../features/${featureName}/dist/${fileName}`;
+        return `/src/features/${featureName}/src/${fileName}`;
     } else {
         // 🔹 Production CDN path
         const version = details[featureName]?.version || '1.0.0';

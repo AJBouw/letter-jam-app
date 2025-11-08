@@ -26,14 +26,15 @@ if (!customElements.get('app-shell')) {
     });
 }
 
-// ✅ Optional mount/unmount API
-export function mount(container, props = {}) {
-    const el = document.createElement('app-shell');
-    Object.assign(el, props);
-    container.innerHTML = '';
-    container.appendChild(el);
-}
-
-export function unmount(container) {
-    container.innerHTML = '';
-}
+// TODO: check when needed
+// // ✅ Optional mount/unmount API
+// export function mount(container, props = {}) {
+//     const el = document.createElement('app-shell');
+//     Object.assign(el, props);
+//     container.innerHTML = '';
+//     container.appendChild(el);
+// }
+//
+// export function unmount(container) {
+//     container.innerHTML = '';
+// }
