@@ -56,23 +56,22 @@ jobs:
           fi
           echo "✅ Dist path is $DIST_PATH"
 
-      # 6️⃣ Prepare branch, copy files, and push cumulative build
-      - name: Prepare and push JSDelivr branch
+      # 6️⃣ Prepare JSDelivr branch (cumulative)
+      - name: Prepare JSDelivr branch
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Fetch remote branch if exists
+          # Fetch and checkout existing build-dist branch (cumulative)
           git fetch origin build-dist || true
-
-          # Checkout existing build-dist or create new
           if git show-ref --quiet refs/heads/build-dist; then
             git checkout build-dist
+            git pull origin build-dist
           else
             git checkout -b build-dist
           fi
 
-          # Make sure centralized folder for this feature exists
+          # Ensure centralized folder for this feature exists
           mkdir -p jsdelivr-dist/${{ inputs.feature-name }}
 
           # Copy the newly built feature into jsdelivr-dist/<feature-name>
@@ -88,5 +87,7 @@ jobs:
             echo "✅ No changes to commit for ${{ inputs.feature-name }}"
           fi
 
-          # Push cumulative branch
-          git push -u origin build-dist --force
+      # 7️⃣ Push cumulative build-dist branch
+      - name: Push build-dist branch
+        run: |
+          git push origin build-dist
