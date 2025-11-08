@@ -1,39 +1,39 @@
-# ----------------------------
+# ==============================
 # Stage 1: Build
-# ----------------------------
+# ==============================
 FROM node:20-alpine AS builder
 
-# Set working directory inside the container
+# Set working directory
 WORKDIR /app
 
-# Copy only package files first (for caching)
-COPY src/app-shell/package*.json ./
+# Copy dependency files first (for caching)
+COPY package*.json ./
 
-# Install dependencies (use install if package-lock.json may be missing)
-RUN npm install
+# Install dependencies
+RUN npm ci
 
-# Copy the source code
-COPY src/app-shell ./
+# Copy the full app-shell source
+COPY . ./
 
-# Build the app-shell
+# Build the app-shell (Vite produces static files in 'dist')
 RUN npm run build
 
-# ----------------------------
-# Stage 2: Serve
-# ----------------------------
+# ==============================
+# Stage 2: Production image
+# ==============================
 FROM nginx:alpine
 
-# Remove default nginx static files
+# Remove default Nginx static content
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy built files from builder
+# Copy built files from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy custom nginx config if needed
+# Copy custom nginx.conf if needed (optional)
 # COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port
+# Expose port 80
 EXPOSE 80
 
-# Start nginx
+# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
