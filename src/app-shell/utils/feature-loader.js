@@ -5,7 +5,7 @@
 export function getFeatureURL(featureName, fileName) {
     const isLocal = window.location.hostname === 'localhost';
 
-    if (!isLocal) {
+    if (isLocal) {
         // 🔹 Local development path (served by Vite dev servers)
         return `/src/features/${featureName}/src/${fileName}`;
     } else {
