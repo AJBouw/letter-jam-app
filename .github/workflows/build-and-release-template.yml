@@ -70,12 +70,16 @@ jobs:
       # 7️⃣ Build & Test Docker image (only for app-shell)
       - name: Build & Test Docker Image
         if: ${{ inputs.feature-name == 'app-shell' }}
-        working-directory: ${{ github.workspace }}  # repo root
-        run: |
-          echo "🔹 Building Docker image..."
-          docker build -f Dockerfile -t letter-jam-frontend:latest .
-          echo "✅ Docker image built successfully"
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: src/app-shell/Dockerfile
+          push: false
+          tags: letter-jam-frontend:latest
 
+      - name: Run Docker image test
+        if: ${{ inputs.feature-name == 'app-shell' }}
+        run: |
           echo "🔹 Running Docker image test..."
           docker run --rm letter-jam-frontend:latest
           echo "✅ Docker image ran successfully"
