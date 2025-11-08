@@ -1,5 +1,5 @@
-# Stage 1: Use Node to copy artifacts (no build inside Docker)
-FROM nginx:alpine AS production
+# Stage 1: base Nginx
+FROM nginx:alpine
 
 # Create directories for features
 RUN mkdir -p /usr/share/nginx/html/src/features/feature-home/dist \
@@ -14,8 +14,8 @@ COPY features/feature-home/dist /usr/share/nginx/html/src/features/feature-home/
 COPY features/feature-login/dist /usr/share/nginx/html/src/features/feature-login/dist
 COPY features/feature-quick-game/dist /usr/share/nginx/html/src/features/feature-quick-game/dist
 
-# Expose nginx port
+# 4️⃣ Expose Nginx port
 EXPOSE 80
 
-# Default command
+# 5️⃣ Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
