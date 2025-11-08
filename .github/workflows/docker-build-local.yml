@@ -29,6 +29,7 @@ jobs:
             };
 
             const runIds = {};
+
             for (const [key, workflowFile] of Object.entries(workflows)) {
               const runs = await github.rest.actions.listWorkflowRuns({
                 owner: context.repo.owner,
@@ -45,7 +46,7 @@ jobs:
 
             return runIds;
 
-      # 3️⃣ Download artifacts
+      # 3️⃣ Download artifacts for each workflow
       - name: Download App Shell
         uses: actions/download-artifact@v4
         with:
@@ -78,7 +79,7 @@ jobs:
           path: features/feature-quick-game/dist
           name: feature-quick-game-dist
 
-      # 4️⃣ Build Docker image using prebuilt artifacts
+      # 4️⃣ Build Docker image (copy only prebuilt artifacts)
       - name: Build Docker image
         run: |
           docker build -t letter-jam-frontend:latest -f src/app-shell/Dockerfile .
