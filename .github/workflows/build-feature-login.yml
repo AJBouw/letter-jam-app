@@ -1,14 +1,16 @@
 name: Build Feature Login
+
 on:
   push:
     branches: [feature-deployment]
     paths:
-      - '../../src/features/feature-login/**'
+      - 'features/feature-login/**'
   workflow_dispatch:
 
 jobs:
   call-template:
-    uses: ./.github/workflows/build-release-template.yml
+    uses: ./.github/workflows/build-and-release-template.yml
     with:
-      feature-path: 'features/feature-login'
+      feature-path: 'src/features/feature-login'
       feature-name: 'feature-login'
+    secrets: inherit

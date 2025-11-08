@@ -1,14 +1,16 @@
 name: Build Feature Home
+
 on:
   push:
     branches: [feature-deployment]
     paths:
-      - '../../src/features/feature-home/**'
+      - 'features/feature-home/**'
   workflow_dispatch:
 
 jobs:
   call-template:
-    uses: ./.github/workflows/build-release-template.yml
+    uses: ./.github/workflows/build-and-release-template.yml
     with:
-      feature-path: 'features/feature-home'
+      feature-path: 'src/features/feature-home'
       feature-name: 'feature-home'
+    secrets: inherit

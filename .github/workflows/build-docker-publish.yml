@@ -1,6 +1,6 @@
 name: Build & Push Frontend Docker Image
 
-# Manual trigger for testing or deployment
+# Manual trigger for testing or deployment [Optional]
 on:
   workflow_dispatch:
 

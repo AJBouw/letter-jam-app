@@ -4,8 +4,8 @@ on:
   push:
     branches: [feature-deployment]
     paths:
-      - 'features/feature-quick-game/**'  # correct relative path
-  workflow_dispatch:   # manual trigger
+      - 'features/feature-quick-game/**'
+  workflow_dispatch:
 
 jobs:
   call-template:
