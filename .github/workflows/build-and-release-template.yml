@@ -18,15 +18,12 @@ on:
 permissions:
   contents: write
 
-env:
-  VITE_GITHUB_USER: ${{ secrets.VITE_GITHUB_USER }}
-
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repo using PAT
+      # 1️⃣ Checkout repository using PAT
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -45,10 +42,11 @@ jobs:
           cd ${{ inputs.feature-path }}
           npm ci
 
-      # 4️⃣ Build feature/app-shell
+      # 4️⃣ Build feature
       - name: Build feature
         run: |
           cd ${{ inputs.feature-path }}
+          echo "VITE_GITHUB_USER=${{ secrets.VITE_GITHUB_USER }}" >> .env
           npm run build
 
       # 5️⃣ Create version tag
@@ -69,10 +67,10 @@ jobs:
           files: |
             ${{ inputs.feature-path }}/dist/**
 
-      # 7️⃣ Optional: Build & test Docker image (only for app-shell)
+      # 7️⃣ Build & Test Docker image (only for app-shell)
       - name: Build & Test Docker Image
         if: ${{ inputs.feature-name == 'app-shell' }}
-        working-directory: ${{ github.workspace }}   # points to repo root
+        working-directory: ${{ github.workspace }}  # repo root
         run: |
           echo "🔹 Building Docker image..."
           docker build -f Dockerfile -t letter-jam-frontend:latest .
