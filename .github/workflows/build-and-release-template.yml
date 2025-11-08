@@ -56,7 +56,14 @@ jobs:
           name: ${{ inputs.feature-name }}-dist
           path: ${{ inputs.feature-name == 'app-shell' && 'dist' || format('{0}/dist', inputs.feature-path) }}
 
-      # 6️⃣ Optional: Build & Test Docker image (only for app-shell)
+      # 6️⃣ Download feature artifacts (only for app-shell build)
+      - name: Download feature artifacts
+        if: ${{ inputs.feature-name == 'app-shell' }}
+        uses: actions/download-artifact@v4
+        with:
+          path: features
+
+      # 7️⃣ Build Docker Image (only for app-shell)
       - name: Build Docker Image
         if: ${{ inputs.feature-name == 'app-shell' }}
         uses: docker/build-push-action@v5
@@ -67,6 +74,7 @@ jobs:
           tags: letter-jam-frontend:latest
           load: true
 
+      # 8️⃣ Test Docker Image (only for app-shell)
       - name: Test Docker Image
         if: ${{ inputs.feature-name == 'app-shell' }}
         run: |
