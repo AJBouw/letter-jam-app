@@ -18,14 +18,14 @@ export default defineConfig({
 
     // Adjust Vites dev server to work with DDEV
     // https://vitejs.dev/config/server-options.html
+    resolve: {
+        alias: {
+            '/features/feature-home/dist': path.resolve(__dirname, './features/feature-home/dist'),
+            '/features/feature-login/dist': path.resolve(__dirname, './features/feature-login/dist'),
+            '/features/feature-quick-game/dist': path.resolve(__dirname, './features/feature-quick-game/dist'),
+        }
+    },
     server: {
-        resolve: {
-            alias: {
-                '/features/feature-home/dist': path.resolve(__dirname, './features/feature-home/dist'),
-                '/features/feature-login/dist': path.resolve(__dirname, './features/feature-login/dist'),
-                '/features/feature-quick-game/dist': path.resolve(__dirname, './features/feature-quick-game/dist'),
-            }
-        },
         // Respond to all network requests
         host: "0.0.0.0",
         port: 5173,
