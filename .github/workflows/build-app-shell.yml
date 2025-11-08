@@ -1,13 +1,16 @@
 name: Build App Shell
+
 on:
   push:
-    branches: [main]
+    branches: [feature-deployment]
     paths:
       - 'app-shell/**'
+  workflow_dispatch:
 
 jobs:
   call-template:
-    uses: ./.github/workflows/build-release-template.yml
+    uses: ./.github/workflows/build-and-release-template.yml
     with:
-      feature-path: 'app-shell'
+      feature-path: 'src/app-shell'
       feature-name: 'app-shell'
+    secrets: inherit
