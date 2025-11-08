@@ -1,9 +1,22 @@
-name: Build Frontend Docker Image from Artifacts
+name: Build & Release Template
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [main, develop]
+  workflow_call:
+    inputs:
+      feature-path:
+        required: true
+        type: string
+      feature-name:
+        required: true
+        type: string
+    secrets:
+      GH_PAT:
+        required: true
+      VITE_GITHUB_USER:
+        required: true
+
+permissions:
+  contents: write
 
 jobs:
   build-docker-from-artifacts:
