@@ -54,40 +54,35 @@ jobs:
           else
             echo "DIST_PATH=${{ inputs.feature-path }}/dist" >> $GITHUB_OUTPUT
           fi
-          echo "✅ Dist path is $DIST_PATH"
 
-      # 6️⃣ Prepare JSDelivr branch (cumulative)
+      # 6️⃣ Prepare cumulative JSDelivr branch
       - name: Prepare JSDelivr branch
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Fetch and checkout existing build-dist branch (cumulative)
+          # Fetch and checkout or create build-dist
           git fetch origin build-dist || true
           if git show-ref --quiet refs/heads/build-dist; then
             git checkout build-dist
-            git pull origin build-dist
+            git merge origin/build-dist --allow-unrelated-histories -m "Merge remote build-dist"
           else
             git checkout -b build-dist
           fi
 
-          # Ensure centralized folder for this feature exists
+          # Create folder for this feature
           mkdir -p jsdelivr-dist/${{ inputs.feature-name }}
-
-          # Copy the newly built feature into jsdelivr-dist/<feature-name>
           cp -r ${{ steps.dist-path.outputs.DIST_PATH }}/* jsdelivr-dist/${{ inputs.feature-name }}/
 
-          # Add new or updated files
-          git add -f jsdelivr-dist/${{ inputs.feature-name }}
-
           # Commit only if there are changes
+          git add -f jsdelivr-dist/${{ inputs.feature-name }}
           if ! git diff --cached --quiet; then
             git commit -m "Build ${{ inputs.feature-name }} for JSDelivr [skip ci]"
           else
             echo "✅ No changes to commit for ${{ inputs.feature-name }}"
           fi
 
-      # 7️⃣ Push cumulative build-dist branch
-      - name: Push build-dist branch
+      # 7️⃣ Push cumulative branch
+      - name: Push cumulative build-dist branch
         run: |
-          git push origin build-dist --force
+          git push origin build-dist
