@@ -72,11 +72,12 @@ jobs:
       # 7️⃣ Optional: Build & test Docker image (only for app-shell)
       - name: Build & Test Docker Image
         if: ${{ inputs.feature-name == 'app-shell' }}
+        working-directory: ${{ github.workspace }}
         run: |
           echo "🔹 Building Docker image..."
           docker build -f src/app-shell/Dockerfile -t letter-jam-frontend:latest src/app-shell
-          echo "✅ Build complete"
+          echo "✅ Docker image built successfully"
 
           echo "🔹 Running Docker image test..."
           docker run --rm letter-jam-frontend:latest
-          echo "✅ Docker test finished"
+          echo "✅ Docker image ran successfully"
