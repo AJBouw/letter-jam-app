@@ -9,8 +9,11 @@ COPY package*.json ./
 # Install dependencies
 RUN npm ci
 
-# Copy source
+# Copy app-shell source
 COPY src ./src
+
+# Switch to app-shell folder for build
+WORKDIR /app/src/app-shell
 
 # Build app-shell
 RUN npm run build
@@ -18,7 +21,6 @@ RUN npm run build
 # Stage 1: Serve with nginx
 FROM nginx:alpine
 
-# Copy built dist to nginx html
 COPY --from=build /app/src/app-shell/dist /usr/share/nginx/html
 
 EXPOSE 80
