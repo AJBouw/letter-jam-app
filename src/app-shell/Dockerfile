@@ -9,11 +9,11 @@ COPY package*.json ./
 # Install dependencies
 RUN npm ci
 
-# Copy app-shell source (relative to build context)
+# Copy source
 COPY src ./src
 
 # Build app-shell
-RUN npm run build --prefix src/app-shell
+RUN npm run build
 
 # Stage 1: Serve with nginx
 FROM nginx:alpine
