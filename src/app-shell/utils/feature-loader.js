@@ -1,4 +1,3 @@
-import { details } from './details.js'
 /**
  * Dynamically builds the correct URL for a micro frontend (feature)
  * depending on environment: local (localhost) or CDN (GitHub release).
@@ -6,21 +5,20 @@ import { details } from './details.js'
 export function getFeatureURL(featureName, fileName) {
     const isLocal = window.location.hostname === 'localhost';
 
-    if (isLocal) {
+    if (!isLocal) {
         // 🔹 Local development path (served by Vite dev servers)
         return `/src/features/${featureName}/src/${fileName}`;
     } else {
         // 🔹 Production CDN path
-        const version = details[featureName]?.version || '1.0.0';
         // The username is provided via environment variable during build
         const githubUser = import.meta.env.VITE_GITHUB_USER;
 
         if (!githubUser) {
             console.error(
-                '❌ Missing VITE_GITHUB_USER environment variable! Ensure it is set in GitHub Actions or .env file.'
+                'Missing VITE_GITHUB_USER environment variable! Ensure it is set in GitHub Actions or .env file.'
             );
         }
 
-        return `https://cdn.jsdelivr.net/gh/${githubUser}/letter-jam-app@${featureName}-v${version}/src/features/${featureName}/dist/${fileName}`;
+        return `https://cdn.jsdelivr.net/gh/${githubUser}/letter-jam-app@build-dist/jsdelivr-dist/${featureName}/${fileName}`;
     }
 }

@@ -1,5 +1,5 @@
 import { routes } from './micro-front-end-config.js';
-import { render } from './micro-front-end-renderer.js';
+import { renderer } from './micro-front-end-renderer.js';
 
 // Parent container for all micro-frontends
 const containerParent = document.getElementById('app') || document.body;
@@ -43,7 +43,7 @@ async function mountRoute(path) {
         const container = getOrCreateContainer(layout.containerId);
 
         // Pass lazyLoad: true if desired
-        await render(container, layout.importFile, {
+        await renderer(container, layout.importFile, {
             props: layout.props || {},
             lazyLoad: false // set true if you want lazy loading
         });

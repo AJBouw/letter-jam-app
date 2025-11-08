@@ -17,10 +17,10 @@ import { getFeatureURL } from './utils/feature-loader.js'
  * @param {string} featureURL - The URL of the feature JS bundle (from getFeatureURL)
  * @param {object} [options] - Optional options to pass to the feature, e.g., { props: {...} }
  */
-export async function render(container, fileURL, options = {}) {
+export async function renderer(container, fileURL, options = {}) {
     const featureName = options.featureName || 'unknown';
     const featureURL = fileURL || getFeatureURL(featureName, `${featureName}.js`);
-
+    console.error("MFE renderer", featureURL);
     if (!container) {
         console.error(`Container not found for ${featureName}`);
         return;
@@ -32,6 +32,7 @@ export async function render(container, fileURL, options = {}) {
             container.innerHTML = '';
             module.mount(container, options.props || {});
             console.log(`Loaded ${featureName} from ${featureURL}`);
+            console.error("MFE renderer TRYYY", featureURL);
         } else {
             console.error(`${featureName} does not export mount(container)`);
         }

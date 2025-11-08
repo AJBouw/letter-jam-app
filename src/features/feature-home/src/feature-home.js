@@ -1,25 +1,12 @@
 import { LitElement, html, css } from 'lit';
-import { render } from '../../../app-shell/micro-front-end-renderer.js';
-import { getFeatureURL } from "../../../app-shell/utils/feature-loader.js";
+import { renderer } from '../../../app-shell/micro-front-end-renderer.js';
+import { getFeatureURL } from '../../../app-shell/utils/feature-loader.js';
 
-/**
- * FeatureHome LitElement class
- * Dynamically loads nested micro-frontends inside the component
- */
 class FeatureHome extends LitElement {
     static styles = css`
-        :host {
-            display: block;
-            padding: 2rem;
-        }
-        h1, h2 {
-            text-align: center;
-        }
-        .container {
-            display: flex;
-            gap: 20px;
-            justify-content: space-between;
-        }
+        :host { display: block; padding: 2rem; }
+        h1, h2 { text-align: center; }
+        .container { display: flex; gap: 20px; justify-content: space-between; }
         .half {
             flex: 1;
             border: 1px solid #ccc;
@@ -28,18 +15,14 @@ class FeatureHome extends LitElement {
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             border-radius: 8px;
         }
-        .half h2 {
-            text-align: center;
-        }
+        .half h2 { text-align: center; }
     `;
 
     firstUpdated() {
         const quickGameContainer = this.shadowRoot.getElementById('quick-game-container');
-        render(quickGameContainer, getFeatureURL('feature-quick-game', 'feature-quick-game.js'), {
-            props: { message: 'Hello from Home!' }
-        });
-
         const loginContainer = this.shadowRoot.getElementById('login-container');
+
+        render(quickGameContainer, getFeatureURL('feature-quick-game', 'feature-quick-game.js'));
         render(loginContainer, getFeatureURL('feature-login', 'feature-login.js'));
     }
 
@@ -58,12 +41,11 @@ class FeatureHome extends LitElement {
     }
 }
 
-// Define custom element once
 if (!customElements.get('feature-home')) {
     customElements.define('feature-home', FeatureHome);
 }
 
-// Public API for app-shell
+// Public API
 export function mount(container, props = {}) {
     if (!container) return;
     const el = document.createElement('feature-home');
