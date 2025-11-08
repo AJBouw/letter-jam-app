@@ -6,7 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "install:feature-home": "cd src/features/feature-home && npm i",
+    "install:feature-login": "cd src/features/feature-login && npm i",
+    "install:feature-quick-game": "cd src/features/feature-quick-game && npm i",
+    "install:all": "npm i && npm run install:feature-home && npm run install:feature-login && npm run install:feature-quick-game",
+    "build:feature-home": "cd src/features/feature-home && npm run build",
+    "build:feature-loging": "cd src/features/feature-login && npm run build",
+    "build:feature-quick-game": "cd src/features/feature-quick-game && npm run build",
+    "build:all": "npm run build && npm run build:feature-quick-game && npm run build:feature-loging && npm run build:feature-home"
+
   },
   "dependencies": {
     "@vaadin/router": "2.0.0",

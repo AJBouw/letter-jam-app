@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node_modules/.bin/vite",
-    "build": "node_modules/.bin/vite build"
+    "dev": "vite",
+    "build": "vite build"
   },
   "dependencies": {
     "@vaadin/router": "2.0.0",
