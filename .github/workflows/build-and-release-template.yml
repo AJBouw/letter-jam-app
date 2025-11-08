@@ -58,29 +58,30 @@ jobs:
       # 6️⃣ Prepare cumulative JSDelivr branch
       - name: Prepare cumulative JSDelivr branch
         run: |
+          # Configure Git
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           # Fetch remote branch
           git fetch origin build-dist || true
-          
+
           # Checkout local build-dist or create it
           if git show-ref --quiet refs/heads/build-dist; then
             git checkout build-dist
           else
             git checkout -b build-dist
           fi
-          
-          # Merge remote branch to keep previous features
-          git merge origin/build-dist --allow-unrelated-histories -m "Merge remote build-dist"
-          
+
+          # Merge remote build-dist while preferring remote files for conflicts
+          git merge origin/build-dist -X theirs --allow-unrelated-histories -m "Merge remote build-dist"
+
           # Ensure folder for this feature exists
           mkdir -p jsdelivr-dist/${{ inputs.feature-name }}
-          
+
           # Copy built files into centralized folder
           cp -r ${{ steps.dist-path.outputs.DIST_PATH }}/* jsdelivr-dist/${{ inputs.feature-name }}/
-          
-          # Stage & commit changes
+
+          # Stage & commit only the new feature folder
           git add -f jsdelivr-dist/${{ inputs.feature-name }}
           if ! git diff --cached --quiet; then
             git commit -m "Build ${{ inputs.feature-name }} for JSDelivr [skip ci]"
