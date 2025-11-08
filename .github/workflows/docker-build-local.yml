@@ -14,12 +14,13 @@ jobs:
       # 1️⃣ Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
-      # 2️⃣ Download artifacts from feature workflows
+      # 2️⃣ Download prebuilt feature artifacts
       - name: Download feature-home artifact
         uses: actions/download-artifact@v4
         with:
           name: feature-home-dist
           path: features/feature-home/dist
+          # Add run-id if you want a specific workflow run
 
       - name: Download feature-login artifact
         uses: actions/download-artifact@v4
@@ -37,30 +38,30 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: app-shell-dist
-          path: dist
+          path: src/app-shell/dist
 
-
-      # 3️⃣ Build Docker image using Nginx
+      # 3️⃣ Build Docker image
       - name: Build Docker image
         run: |
-          docker build \
-            -f src/app-shell/Dockerfile \
-            -t letter-jam-frontend:latest \
-            .
+          docker build -f Dockerfile -t letter-jam-frontend:latest .
 
-      # 4️⃣ Optional: test Docker container
-      - name: Run Docker container for test
+      # 4️⃣ Run container to test
+      - name: Run Docker container
         run: |
+          # Remove existing test container
           if [ $(docker ps -aq -f name=letter-jam-frontend-test) ]; then
             docker rm -f letter-jam-frontend-test
           fi
+
           docker run -d -p 8080:80 --name letter-jam-frontend-test letter-jam-frontend:latest
           sleep 5
+
           if ! curl -f http://localhost:8080 > /dev/null; then
-            echo "❌ Frontend did not start properly"
+            echo "Frontend did not start properly"
             exit 1
           fi
 
       # 5️⃣ Stop test container
       - name: Stop test container
-        run: docker rm -f letter-jam-frontend-test || true
+        run: |
+          docker rm -f letter-jam-frontend-test || true
