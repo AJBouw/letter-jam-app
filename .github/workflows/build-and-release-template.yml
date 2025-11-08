@@ -1,4 +1,4 @@
-name: Build & Release Template
+name: Build & Deploy Feature for JSDelivr
 
 on:
   workflow_call:
@@ -15,11 +15,8 @@ on:
       VITE_GITHUB_USER:
         required: true
 
-permissions:
-  contents: write
-
 jobs:
-  build-and-release:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,7 +25,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_PAT }}
-          persist-credentials: true
 
       # 2️⃣ Setup Node.js
       - name: Setup Node.js
@@ -49,63 +45,36 @@ jobs:
           echo "VITE_GITHUB_USER=${{ secrets.VITE_GITHUB_USER }}" >> .env
           npm run build
 
-      # 5️⃣ Commit dist to branch for JSDelivr
-      - name: Commit dist for JSDelivr
+      # 5️⃣ Determine dist path
+      - name: Determine dist path
+        id: dist-path
         run: |
-          # Determine correct dist path
           if [ "${{ inputs.feature-name }}" == "app-shell" ]; then
-            DIST_PATH="dist"
+            echo "DIST_PATH=dist" >> $GITHUB_OUTPUT
           else
-            DIST_PATH="${{ inputs.feature-path }}/dist"
+            echo "DIST_PATH=${{ inputs.feature-path }}/dist" >> $GITHUB_OUTPUT
           fi
-
           echo "✅ Dist path is $DIST_PATH"
 
-          # Configure Git
+      # 6️⃣ Prepare branch and copy built files
+      - name: Prepare JSDelivr branch
+        run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Create a branch to store built files if you want
-          # Optional: comment this out to commit directly to main/develop
+          
+          # Checkout or create branch
+          git fetch origin build-dist || true
           git checkout -B build-dist || git checkout build-dist
+          
+          # Create centralized folder for JSDelivr
+          mkdir -p jsdelivr-dist/${{ inputs.feature-name }}
+          cp -r ${{ steps.dist-path.outputs.DIST_PATH }}/* jsdelivr-dist/${{ inputs.feature-name }}/
+          
+          # Add & commit with force (in case of ignore)
+          git add -f jsdelivr-dist/${{ inputs.feature-name }}
+          git commit -m "Build ${{ inputs.feature-name }} for JSDelivr [skip ci]" || echo "No changes to commit"
 
-          # Copy dist to a centralized folder if needed, e.g., root/dist/<feature-name>
-          mkdir -p dist/${{ inputs.feature-name }}
-          cp -r $DIST_PATH/* dist/${{ inputs.feature-name }}/
-
-          # Add, commit, and push
-          git add dist/${{ inputs.feature-name }}
-          git commit -m "Build ${inputs.feature-name} for JSDelivr [skip ci]" || echo "No changes to commit"
-          git push -u origin HEAD
-
-      # 6️⃣ Upload artifact (optional for testing)
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.feature-name }}-dist
-          path: ${{ inputs.feature-name == 'app-shell' && 'dist' || format('{0}/dist', inputs.feature-path) }}
-
-      # 7️⃣ Optional: Build & Test Docker image (only for app-shell)
-      - name: Build Docker Image
-        if: ${{ inputs.feature-name == 'app-shell' }}
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: src/app-shell/Dockerfile
-          push: false
-          tags: letter-jam-frontend:latest
-          load: true
-
-      - name: Test Docker Image
-        if: ${{ inputs.feature-name == 'app-shell' }}
+      # 7️⃣ Push to remote
+      - name: Push to build-dist branch
         run: |
-          echo "🔹 Starting Docker container for test..."
-          docker run --rm -d --name test-nginx letter-jam-frontend:latest
-          sleep 5
-          echo "🔹 Checking container health..."
-          if ! curl -f http://localhost:80; then
-            echo "Frontend did not start properly"
-            exit 1
-          fi
-          docker stop test-nginx
-          echo "✅ Docker image test completed successfully"
+          git push -u origin build-dist --force
