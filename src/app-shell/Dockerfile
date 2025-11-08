@@ -10,7 +10,7 @@ COPY package*.json ./
 RUN npm ci
 
 # Copy app-shell source (relative to build context)
-COPY src/app-shell ./src/app-shell
+COPY src ./src
 
 # Build app-shell
 RUN npm run build --prefix src/app-shell
