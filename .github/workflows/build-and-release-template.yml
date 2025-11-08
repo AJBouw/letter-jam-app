@@ -51,7 +51,7 @@ jobs:
 
       # 5️⃣ Upload dist as artifact
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.feature-name }}-dist
           path: ${{ inputs.feature-path }}/dist
