@@ -1,0 +1,63 @@
+name: Build & Dockerize App-Shell
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-store:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Build Docker image (from src/app-shell)
+      - name: Build Docker image
+        run: |
+          docker build -t letter-jam-app-shell:latest -f src/app-shell/Dockerfile src/app-shell
+
+      # Save image to TAR file
+      - name: Save Docker image as TAR
+        run: |
+          docker save letter-jam-app-shell:latest -o letter-jam-app-shell.tar
+
+
+      # Test container
+      - name: Smoke test container
+        run: |
+          docker run -d -p 8080:80 --name app-shell-test letter-jam-app-shell:latest
+          sleep 5
+          docker ps | grep app-shell-test
+          docker rm -f app-shell-test
+          
+          # 4️⃣ Prepare build-docker branch
+          - name: Push TAR to build-docker branch
+            env:
+              GH_PAT: ${{ secrets.GH_PAT }}
+            run: |
+              git config --global user.name "github-actions[bot]"
+              git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+              # Fetch or create branch
+              git fetch origin build-docker || true
+              if git show-ref --quiet refs/heads/build-docker; then
+                git checkout build-docker
+              else
+                git checkout -b build-docker
+              fi
+          
+              # Make folder for TARs
+              mkdir -p docker-dist/app-shell
+          
+              # Move TAR file into that folder
+              mv letter-jam-app-shell.tar docker-dist/app-shell/
+          
+              # Commit TAR if changed
+              git add docker-dist/app-shell/letter-jam-app-shell.tar
+              if ! git diff --cached --quiet; then
+                git commit -m "Build app-shell Docker TAR [skip ci]"
+                git push origin build-docker
+              else
+                echo "✅ No changes to commit."
+              fi

@@ -1,15 +1,32 @@
-# Stage 1: Build (optional, if app-shell build already done in CI)
-FROM node:20-alpine AS build
+# -------------------------------
+# 🧱 Stage 1: Build the app-shell
+# -------------------------------
+FROM node:20 AS build
+
+# Set working directory
 WORKDIR /app
-COPY app-shell/dist /usr/share/nginx/html
 
-# Stage 2: Nginx
-FROM nginx:alpine
-COPY --from=build /usr/share/nginx/html /usr/share/nginx/html
+# Copy dependency files
+COPY package*.json ./
+RUN npm ci
 
-# Copy features
-COPY features/feature-home-dist /usr/share/nginx/html/src/features/feature-home/dist
-COPY features/feature-login-dist /usr/share/nginx/html/src/features/feature-login/dist
-COPY features/feature-quick-game-dist /usr/share/nginx/html/src/features/feature-quick-game/dist
+# Copy app-shell source
+COPY . .
 
+# Build for production
+RUN npm run build
+
+
+# -------------------------------
+# 🚀 Stage 2: Serve with Nginx
+# -------------------------------
+FROM nginx:stable-alpine
+
+# Copy build output to Nginx web root
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Expose port 80
 EXPOSE 80
+
+# Run Nginx in the foreground
+CMD ["nginx", "-g", "daemon off;"]
