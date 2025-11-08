@@ -1,32 +1,28 @@
-# Stage 1: Build the app-shell
+# Stage 1: Build app-shell
 FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files first (for caching)
-COPY src/app-shell/package*.json ./
+# Copy dependency files
+COPY package*.json ./
 
-# Install dependencies (requires package-lock.json)
+# Install dependencies
 RUN npm ci
 
-# Copy the full source code
-COPY src/app-shell ./
+# Copy all source files
+COPY . ./
 
-# Build the app-shell
+# Build the app
 RUN npm run build
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
 
-# Remove default Nginx content
+# Remove default nginx content
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copy built files from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose HTTP port
 EXPOSE 80
-
-# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
