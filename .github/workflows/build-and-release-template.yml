@@ -67,19 +67,36 @@ jobs:
           files: |
             ${{ inputs.feature-path }}/dist/**
 
-      # 7️⃣ Build & Test Docker image (only for app-shell)
-      - name: Build & Test Docker Image
+      # 7️⃣ Build Docker image (only for app-shell)
+      - name: 🏗️ Build Docker Image (app-shell only)
         if: ${{ inputs.feature-name == 'app-shell' }}
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: .
-          file: src/app-shell/Dockerfile
+          file: Dockerfile
           push: false
           tags: letter-jam-frontend:latest
 
-      - name: Run Docker image test
+      # 8️⃣ Run Docker image test with timeout (prevents infinite hang)
+      - name: 🧪 Run Docker Image Test
         if: ${{ inputs.feature-name == 'app-shell' }}
+        timeout-minutes: 2
         run: |
-          echo "🔹 Running Docker image test..."
-          docker run --rm letter-jam-frontend:latest
-          echo "✅ Docker image ran successfully"
+          echo "🔹 Starting container..."
+          docker run -d -p 8080:80 --name test-app letter-jam-frontend:latest
+
+          echo "⏳ Waiting for container to start..."
+          sleep 5
+
+          echo "🔍 Checking app availability..."
+          if ! curl -fs http://localhost:8080 > /dev/null; then
+            echo "❌ App not reachable, showing logs..."
+            docker logs test-app || true
+            docker stop test-app || true
+            docker rm test-app || true
+            exit 1
+          fi
+
+          echo "✅ App reachable — test passed!"
+          docker stop test-app
+          docker rm test-app
