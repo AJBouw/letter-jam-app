@@ -1,6 +1,5 @@
 name: Build & Test Frontend Docker Image
 
-# Trigger manually or on push to main/develop
 on:
   workflow_dispatch:    # Manual trigger
   push:
@@ -11,57 +10,126 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout the repository
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
-      # 2️⃣ Download prebuilt feature artifacts
-      - name: Download feature-home artifact
+
+      # 2️⃣ Get latest successful workflow run IDs
+      - name: Get latest Build Feature Home run ID
+        id: get_home_run
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflow = 'Build Feature Home';
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: workflow,
+              status: 'success',
+              per_page: 1
+            });
+            return runs.data.workflow_runs[0].id;
+
+      - name: Get latest Build Feature Login run ID
+        id: get_login_run
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflow = 'Build Feature Login';
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: workflow,
+              status: 'success',
+              per_page: 1
+            });
+            return runs.data.workflow_runs[0].id;
+
+      - name: Get latest Build Feature Quick Game run ID
+        id: get_quick_run
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflow = 'Build Feature Quick Game';
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: workflow,
+              status: 'success',
+              per_page: 1
+            });
+            return runs.data.workflow_runs[0].id;
+
+      - name: Get latest Build App Shell run ID
+        id: get_shell_run
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const workflow = 'Build App Shell';
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: workflow,
+              status: 'success',
+              per_page: 1
+            });
+            return runs.data.workflow_runs[0].id;
+
+      # 3️⃣ Download artifacts into correct folders
+      - name: Download Feature Home artifact
         uses: actions/download-artifact@v4
         with:
           name: feature-home-dist
-          path: features/feature-home/dist
-          # Add run-id if you want a specific workflow run
+          path: src/features/feature-home/dist
+          run-id: ${{ steps.get_home_run.outputs.result }}
 
-      - name: Download feature-login artifact
+      - name: Download Feature Login artifact
         uses: actions/download-artifact@v4
         with:
           name: feature-login-dist
-          path: features/feature-login/dist
+          path: src/features/feature-login/dist
+          run-id: ${{ steps.get_login_run.outputs.result }}
 
-      - name: Download feature-quick-game artifact
+      - name: Download Feature Quick Game artifact
         uses: actions/download-artifact@v4
         with:
           name: feature-quick-game-dist
-          path: features/feature-quick-game/dist
+          path: src/features/feature-quick-game/dist
+          run-id: ${{ steps.get_quick_run.outputs.result }}
 
-      - name: Download app-shell artifact
+      - name: Download App Shell artifact
         uses: actions/download-artifact@v4
         with:
           name: app-shell-dist
           path: src/app-shell/dist
+          run-id: ${{ steps.get_shell_run.outputs.result }}
 
-      # 3️⃣ Build Docker image
+      # 4️⃣ Build Docker image
       - name: Build Docker image
         run: |
-          docker build -f Dockerfile -t letter-jam-frontend:latest .
+          docker build --load -f src/app-shell/Dockerfile -t letter-jam-frontend:latest .
 
-      # 4️⃣ Run container to test
-      - name: Run Docker container
+      # 5️⃣ Run Docker container (test)
+      - name: Run Docker container (test)
         run: |
-          # Remove existing test container
           if [ $(docker ps -aq -f name=letter-jam-frontend-test) ]; then
             docker rm -f letter-jam-frontend-test
           fi
-
           docker run -d -p 8080:80 --name letter-jam-frontend-test letter-jam-frontend:latest
-          sleep 5
-
+          for i in {1..5}; do
+            if curl -f http://localhost:8080 > /dev/null; then
+              echo "✅ Frontend is up and running"
+              break
+            fi
+            echo "Waiting for frontend to start..."
+            sleep 2
+          done
           if ! curl -f http://localhost:8080 > /dev/null; then
-            echo "Frontend did not start properly"
+            echo "❌ Frontend did not start properly"
             exit 1
           fi
 
-      # 5️⃣ Stop test container
+      # 6️⃣ Stop test container
       - name: Stop test container
         run: |
           docker rm -f letter-jam-frontend-test || true
