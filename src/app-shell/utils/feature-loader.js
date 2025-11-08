@@ -6,8 +6,6 @@ import { details } from './details.js';
  * @param fileName
  * @returns {string}
  */
-import details from '../micro-front-end-config.js';
-
 export function getFeatureURL(featureName, fileName) {
     const isLocal = window.location.hostname === 'localhost';
     const basePath = isLocal
