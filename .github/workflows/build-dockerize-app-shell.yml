@@ -1,7 +1,12 @@
 name: Build & Dockerize App-Shell
 
 on:
+  # For test purpose commented
+#  push:
+#    branches:
+#      - main
   workflow_dispatch:
+
 
 jobs:
   build-and-store:
@@ -31,29 +36,28 @@ jobs:
           docker ps | grep app-shell-test
           docker rm -f app-shell-test
           
-          - name: Push TAR to build-docker branch
-            env:
-              GH_PAT: ${{ secrets.GH_PAT }}
-            run: |
-              git config --global user.name "github-actions[bot]"
-              git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-              # Fetch or create branch
-              git fetch origin build-docker || true
-              if git show-ref --quiet refs/heads/build-docker; then
-                git checkout build-docker
-              else
-                git checkout -b build-docker
-              fi
-          
-              mkdir -p docker-dist/app-shell
-          
-              mv letter-jam-app-shell.tar docker-dist/app-shell/
-          
-              git add docker-dist/app-shell/letter-jam-app-shell.tar
-              if ! git diff --cached --quiet; then
-                git commit -m "Build app-shell Docker TAR [skip ci]"
-                git push origin build-docker
-              else
-                echo "No changes to commit."
-              fi
+      - name: Push TAR to build-docker branch
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+          git fetch origin build-docker || true
+          if git show-ref --quiet refs/heads/build-docker; then
+            git checkout build-docker
+          else
+            git checkout -b build-docker
+          fi
+      
+          mkdir -p docker-dist/app-shell
+      
+          mv letter-jam-app-shell.tar docker-dist/app-shell/
+      
+          git add docker-dist/app-shell/letter-jam-app-shell.tar
+          if ! git diff --cached --quiet; then
+            git commit -m "Build app-shell Docker TAR [skip ci]"
+            git push origin build-docker
+          else
+            echo "No changes to commit."
+          fi
