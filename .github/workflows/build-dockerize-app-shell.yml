@@ -15,7 +15,7 @@ jobs:
       # Build Docker image (from src/app-shell)
       - name: Build Docker image
         run: |
-          docker build -t letter-jam-app-shell:latest -f src/app-shell/Dockerfile src/app-shell
+          docker build -t letter-jam-app-shell:latest -f src/app-shell/Dockerfile .
 
       # Save image to TAR file
       - name: Save Docker image as TAR
