@@ -5,8 +5,8 @@ const featureName = process.env.FEATURE_NAME || '';
 
 export default defineConfig({
     base: '/',
+    root: resolve(__dirname, 'src/app-shell'),
     build: {
-        // outDir: 'dist', // Output folder (relative to project root)
         outDir: featureName === 'app-shell' ? path.resolve(__dirname, '../../dist') : 'dist',
         emptyOutDir: true, // Clear old files before building
         sourcemap: false // Optional: generate source maps
@@ -24,13 +24,13 @@ export default defineConfig({
 
     // Adjust Vites dev server to work with DDEV
     // https://vitejs.dev/config/server-options.html
-    resolve: {
-        alias: {
-            '/features/feature-home/dist': path.resolve(__dirname, './features/feature-home/dist'),
-            '/features/feature-login/dist': path.resolve(__dirname, './features/feature-login/dist'),
-            '/features/feature-quick-game/dist': path.resolve(__dirname, './features/feature-quick-game/dist'),
-        }
-    },
+    // resolve: {
+    //     alias: {
+    //         '/features/feature-home/dist': path.resolve(__dirname, './features/feature-home/dist'),
+    //         '/features/feature-login/dist': path.resolve(__dirname, './features/feature-login/dist'),
+    //         '/features/feature-quick-game/dist': path.resolve(__dirname, './features/feature-quick-game/dist'),
+    //     }
+    // },
     server: {
         // Respond to all network requests
         host: "0.0.0.0",
