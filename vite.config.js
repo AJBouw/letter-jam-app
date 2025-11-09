@@ -2,14 +2,18 @@ import {defineConfig} from 'vite';
 import path from 'path';
 
 export default defineConfig({
+    root: '.', // Where Vite considers the project's source entry
     build: {
-        outDir: 'dist', // Output folder (relative to project root)
-        emptyOutDir: true, // Clear old files before building
-        sourcemap: false // Optional: generate source maps
+        outDir: 'dist',
+        emptyOutDir: true,
+        sourcemap: false
+    },
+    rollupOptions: {
+        input: {
+            main: path.resolve(__dirname, 'index.html')
+        }
     },
 
-    // Adjust Vites dev server to work with DDEV
-    // https://vitejs.dev/config/server-options.html
     server: {
         resolve: {
             alias: {
@@ -18,10 +22,9 @@ export default defineConfig({
                 '/features/feature-quick-game/dist': path.resolve(__dirname, '../features/feature-quick-game/dist'),
             }
         },
-        // Respond to all network requests
         host: "0.0.0.0",
         port: 5173,
-        open: true, // Open browser automatically
+        open: true,
         strictPort: true,
         proxy: {
             '/api': {
