@@ -1,0 +1,29 @@
+# Ignore Node dependencies (we'll install fresh inside Docker)
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build output (if you're building inside Docker, this is recreated)
+dist
+build
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea
+.vscode
+
+# Git and local repo files
+.git
+.gitignore
+.gitattributes
+
+# Environment files
+.env
+.env.*
+!env.example   # keep example envs if you have them
+
+# Temporary files
+*.swp
+*.tmp
+*.log
