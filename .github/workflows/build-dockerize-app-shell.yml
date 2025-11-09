@@ -31,7 +31,6 @@ jobs:
           docker ps | grep app-shell-test
           docker rm -f app-shell-test
           
-          # 4️⃣ Prepare build-docker branch
           - name: Push TAR to build-docker branch
             env:
               GH_PAT: ${{ secrets.GH_PAT }}
@@ -47,17 +46,14 @@ jobs:
                 git checkout -b build-docker
               fi
           
-              # Make folder for TARs
               mkdir -p docker-dist/app-shell
           
-              # Move TAR file into that folder
               mv letter-jam-app-shell.tar docker-dist/app-shell/
           
-              # Commit TAR if changed
               git add docker-dist/app-shell/letter-jam-app-shell.tar
               if ! git diff --cached --quiet; then
                 git commit -m "Build app-shell Docker TAR [skip ci]"
                 git push origin build-docker
               else
-                echo "✅ No changes to commit."
+                echo "No changes to commit."
               fi
