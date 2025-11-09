@@ -13,7 +13,7 @@ COPY package*.json ./
 RUN npm ci
 
 # Copy all source files needed for the build
-COPY index.html ./           # index.html is at the root
+COPY index.html ./
 COPY src/app-shell ./src/app-shell
 
 # Run the build (Vite will output to /app/dist)
