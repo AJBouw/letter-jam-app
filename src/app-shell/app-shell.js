@@ -1,9 +1,9 @@
 import { html, LitElement } from 'lit';
 import { Router } from '@lit-labs/router';
 import './components/default-layout.js';
-import { FeatureHome } from './../features/feature-home/feature-home.js';
-import { FeatureLogin } from "../features/feature-login/feature-login.js";
-import { FeatureQuickStart } from "../features/feature-quick-start/feature-quick-start.js";
+import './../features/feature-home/feature-home.js';
+import './../features/feature-login/feature-login.js';
+import './../features/feature-quick-start/feature-quick-start.js';
 
 export class AppShell extends LitElement {
     constructor() {

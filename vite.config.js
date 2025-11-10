@@ -17,8 +17,16 @@ export default defineConfig({
     //     }
     // },
     server: {
+        host: "0.0.0.0",
         port: 5173,
         strictPort: true,
+        proxy: {
+            '/games': {
+                target: 'http://localhost:8080',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api/, ''),
+            }
+        },
         fs: {
             // Allow Vite dev server to access outside src
             allow: [
