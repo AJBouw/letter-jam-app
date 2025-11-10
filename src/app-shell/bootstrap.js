@@ -1,6 +1,6 @@
-const root = document.getElementById('app');
-
+import '@webcomponents/scoped-custom-element-registry'; // polyfill first
 import './app-shell.js';
 
-const shell = document.createElement('app-shell');
-root.appendChild(shell);
+const root = document.getElementById('app');
+const app = document.createElement('app-shell');
+root.appendChild(app);

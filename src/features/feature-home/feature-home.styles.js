@@ -1,6 +1,6 @@
 import { css } from 'lit';
 
-export const AppShellStyles = [
+export const FeatureHomeStyles = [
     css`
     `
 ];

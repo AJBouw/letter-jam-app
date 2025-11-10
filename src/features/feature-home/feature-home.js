@@ -1,36 +1,29 @@
 import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
-import { HomeView } from './src/home-view.js';
-import { HomeViewModel } from './src/home-view-model.js';
-import { HomeViewStyles } from './src/home-view.styles.js';
-// import { FeatureLogin } from '../feature-login/src/login-view.js';
-// import { QuickStartView } from '../feature-quick-start/src/quick-start-view.js';
+import { FeatureHomeStyles } from './feature-home.styles.js';
+import { FeatureLogin } from './../feature-login/feature-login.js';
+import { FeatureQuickStart } from '../feature-quick-start/feature-quick-start.js';
 
-export class FeatureHome extends LitElement {
+export class FeatureHome extends ScopedElementsMixin(LitElement) {
     static get scopedElements() {
         return {
-            // 'login-view': LoginView,
-            // 'quic-start-view': QuickStartView
+            'feature-login': FeatureLogin,
+            'feature-quick-start': FeatureQuickStart
         };
     }
 
-    static  styles = [
-        HomeViewStyles
-    ];
-
-    constructor() {
-        super();
-        this.vm = new HomeViewModel();
+    static get styles() {
+        return [
+            FeatureHomeStyles
+        ];
     }
 
     render() {
         return html`
-            <h2>Welcome to Letter Jam</h2>
-        `;
+      <h2>Welcome to Letter Jam!</h2>
+      <p>This is the home feature.</p>
+    `;
     }
 }
-//
-// customElements.define('feature-home', FeatureHome);
 
-// TODO: remove before commit
-console.log('feature-home.js loaded');
+customElements.define('feature-home', FeatureHome);

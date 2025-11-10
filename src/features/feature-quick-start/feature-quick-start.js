@@ -3,7 +3,13 @@ import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { QuickStartViewModel } from './src/quick-start-view-model.js';
 import { QuickStartViewStyles } from './src/quick-start-view.styles.js';
 
-export class FeatureQuickStart extends LitElement {
+export class FeatureQuickStart extends ScopedElementsMixin(LitElement) {
+    static get scopedElements() {
+        return {
+
+        };
+    }
+
     static styles = [
         QuickStartViewStyles
     ];
@@ -15,7 +21,6 @@ export class FeatureQuickStart extends LitElement {
 
     async handleStart() {
         const result = await this.vm.startGame({ name: 'Player A' });
-        console.log(result);
     }
 
     render() {
@@ -26,4 +31,4 @@ export class FeatureQuickStart extends LitElement {
     }
 }
 
-// customElements.define('feature-quick-start', FeatureQuickStart);
+customElements.define('feature-quick-start', FeatureQuickStart);
