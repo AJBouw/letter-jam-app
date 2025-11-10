@@ -5,8 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "install:feature-home": "cd src/features/feature-home && npm i",
+    "install:feature-login": "cd src/features/feature-login && npm i",
+    "install:feature-quick-start": "cd src/features/feature-quick-start && npm i",
+    "install:all": "npm i && npm run install:feature-home && npm run install:feature-login && npm run install:feature-quick-start",
+    "build:feature-home": "cd src/features/feature-home && npm run build",
+    "build:feature-loging": "cd src/features/feature-login && npm run build",
+    "build:feature-quick-start": "cd src/features/feature-quick-start && npm run build",
+    "build:all": "npm run build && npm run build:feature-quick-start && npm run build:feature-loging && npm run build:feature-home"
   },
   "dependencies": {
     "@open-wc/scoped-elements": "^3.0.6",
