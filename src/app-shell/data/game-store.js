@@ -1,0 +1,3 @@
+/**
+ * Global reactive error state
+ */
