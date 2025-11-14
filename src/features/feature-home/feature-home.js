@@ -5,6 +5,7 @@ import { FeatureHomeStyles } from './feature-home.styles.js';
 export class FeatureHome extends ScopedElementsMixin(LitElement) {
     static get scopedElements() {
         return {
+
         };
     }
 
@@ -13,6 +14,10 @@ export class FeatureHome extends ScopedElementsMixin(LitElement) {
             FeatureHomeStyles
         ];
     }
+
+    static properties = {
+
+    };
 
     render() {
         return html`

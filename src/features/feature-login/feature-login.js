@@ -10,9 +10,15 @@ export class FeatureLogin extends ScopedElementsMixin(LitElement) {
         };
     }
 
-    static styles = [
-        LoginViewStyles
-    ];
+    static get styles() {
+        return [
+            LoginViewStyles
+        ];
+    }
+
+    static properties = {
+
+    };
 
     constructor() {
         super();

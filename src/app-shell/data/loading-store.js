@@ -1,3 +1,0 @@
-/**
- * Global loading indicator
- */

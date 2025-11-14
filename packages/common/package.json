@@ -1,0 +1,9 @@
+{
+  "name": "@common/core",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "type": "module",
+  "dependencies": {
+    "@preact/signals": "^1.2.1"
+  }
+}

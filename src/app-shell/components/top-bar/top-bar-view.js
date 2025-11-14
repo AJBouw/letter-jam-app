@@ -1,7 +1,7 @@
-import { LitElement, html, css } from 'lit';
-import {ScopedElementsMixin} from '@open-wc/scoped-elements/lit-element.js';
+import { LitElement, html } from 'lit';
+import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
+import { TopBarViewStyles } from './top-bar-view.styles.js';
 import logo from '../../../assets/letter-limbo.png';
-// import { TopBarStyles } from './../styles/op-bar.styles.js';
 
 export class TopBarView extends ScopedElementsMixin(LitElement) {
     static get scopedElements() {
@@ -12,7 +12,7 @@ export class TopBarView extends ScopedElementsMixin(LitElement) {
 
     static get styles() {
         return [
-            // TopBarStyles
+            TopBarViewStyles
         ];
     }
 
@@ -23,13 +23,16 @@ export class TopBarView extends ScopedElementsMixin(LitElement) {
     render() {
         return html`
             <header>
-                <div class="left">
-                    <img src=${logo} alt="Letter Limbo logo" class="logo-img" />
-                    <slot name="logo"></slot>
-                </div>
+                <div class="top-bar-container">
+                    <div class="top-bar-left">
+                        <img src=${logo} alt="Letter Limbo logo" class="logo-img" />
+                        <h1>Letter Limbo</h1>
+                    </div>
 
-                <div class="right">
-                    <slot name="actions"></slot>
+                    <div class="top-bar-right">
+                        <button>Profile</button>
+                        <button>Logout</button>
+                    </div>
                 </div>
             </header>
         `;
