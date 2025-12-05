@@ -2,7 +2,7 @@ import { computed, signal } from '@preact/signals';
 import { GlobalStore } from '../../../../../packages/common';
 import { navigateTo } from '../../../../app-shell/routing/current-route.js';
 
-export class InProgressViewModel {
+export class ReadyToStartViewModel {
     constructor() {
         const game = GlobalStore.game.currentGame;
 

@@ -7,7 +7,7 @@ export default defineConfig({
         outDir: '../../feature-login/dist',
         emptyOutDir: true,
         lib: {
-            entry: path.resolve(__dirname, 'src/login-view.js'),
+            entry: path.resolve(__dirname, 'src/feature-login-view.js'),
             name: 'feature-login',
             // fileName: 'featurelogin.js' by default
             formats: ['es']

@@ -7,7 +7,7 @@ export default defineConfig({
         outDir: '../../feature-home/dist',       // build output relative to feature folder
         emptyOutDir: true,
         lib: {
-            entry: path.resolve(__dirname, 'src/home-view.js'), // entry JS
+            entry: path.resolve(__dirname, 'src/feature-home-view.js'), // entry JS
             name: 'featureHome',       // optional global name
             // fileName: 'featurehome.js' by default
             formats: ['es'],           // ES module

@@ -1,19 +1,43 @@
-import '@webcomponents/scoped-custom-element-registry'; // polyfill first
+import '@webcomponents/scoped-custom-element-registry';
 import './app-shell.js';
 import { ThemeService } from '../../packages/common/services/ThemeService.js';
-import { lightTheme } from '../../packages/common/src/ui/themes.js';
-import { colorTokens } from '../../packages/common/src/ui/color-tokens.js';
+import { lightTheme, darkTheme } from '../../packages/common/src/ui/themes.js';
+import { GlobalStyles } from "../../global.styles.js";
 
-const style = document.createElement('style')
-style.textContent = colorTokens;
+// Inject global styles
+const style = document.createElement('style');
+style.textContent = GlobalStyles.cssText;
 document.head.appendChild(style);
 
+// Initialize theme service
 export const themeService = new ThemeService();
-themeService.setLightTheme(lightTheme);
-themeService.onChange((theme) => {
-  console.log('Theme applied: ', theme);
+
+// Detect system preference
+const prefersDark = window.matchMedia &&
+  window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+// Apply system theme initially
+if (prefersDark) {
+  themeService.setDarkTheme(darkTheme);
+} else {
+  themeService.setLightTheme(lightTheme);
+}
+
+// Optional: listen for changes in system theme
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  if (e.matches) {
+    themeService.setDarkTheme(darkTheme);
+  } else {
+    themeService.setLightTheme(lightTheme);
+  }
 });
 
+// Debug or UI hook
+themeService.onChange(theme => {
+  console.log('Theme applied:', theme);
+});
+
+// Mount app shell
 const root = document.getElementById('app');
 const app = document.createElement('app-shell');
 root.appendChild(app);

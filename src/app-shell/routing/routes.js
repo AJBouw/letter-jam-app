@@ -1,15 +1,15 @@
 import { html } from 'lit';
-import '../../features/feature-home/feature-home.js';
-import '../../features/feature-login/feature-login.js';
-import '../../features/feature-quick-start/feature-quick-start.js';
+import '../../features/feature-home/src/feature-home-view.js';
+import '../../features/feature-login/src/feature-login-view.js';
+import '../../features/feature-quick-game/src/feature-quick-game-view.js';
 import '../../features/feature-game/src/waiting-for-players/waiting-for-players-view.js';
-import '../../features/feature-game/src/in-progress/in-progress-view.js';
+import '../../features/feature-game/src/ready-to-start/ready-to-start-view.js';
 import '../../features/feature-game/src/playing/playing-view.js';
 
 export const AppRoutes = [
-    { path: '/', render: () => html`<feature-home></feature-home>` },
-    { path: '/login', render: () => html`<feature-login></feature-login>` },
-    { path: '/quick-game', render: () => html`<feature-quick-start></feature-quick-start>` },
+    { path: '/', render: () => html`<feature-home-view></feature-home-view>` },
+    { path: '/login', render: () => html`<feature-login-view></feature-login-view>` },
+    { path: '/quick-game', render: () => html`<feature-quick-game-view></feature-quick-game-view>` },
 
     { path: '/quick-game/waiting-for-players',
         render: () => html`<waiting-for-players-view></waiting-for-players-view>` },

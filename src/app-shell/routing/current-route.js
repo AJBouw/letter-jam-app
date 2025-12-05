@@ -1,14 +1,22 @@
-import { signal } from '@preact/signals';
-
-export const currentRoute = signal(window.location.pathname);
-
-export function navigateTo(path) {
-    if (path === currentRoute.value) return;
+class RouteStore {
+  constructor() {
+    this.value = window.location.pathname;
+    this.listeners = [];
+  }
+  
+  subscribe(callback) {
+    this.listeners.push(callback);
+  }
+  
+  set(path) {
+    this.value = path;
+    this.listeners.forEach(cb => cb(path));
     window.history.pushState({}, '', path);
-    currentRoute.value = path;
+  }
 }
 
-// Sync with browser back/forward
-window.addEventListener('popstate', () => {
-    currentRoute.value = window.location.pathname;
-});
+export const currentRoute = new RouteStore();
+
+export const navigateTo = (path) => {
+  currentRoute.set(path);
+};

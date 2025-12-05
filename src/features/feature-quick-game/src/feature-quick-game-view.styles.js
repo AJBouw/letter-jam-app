@@ -1,6 +1,6 @@
 import { css } from 'lit';
 
-export const QuickStartViewStyles = [
+export const FeatureQuickGameViewStyles = [
     css`
         form {
             display: flex;

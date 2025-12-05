@@ -4,18 +4,17 @@ import path from 'path';
 export default defineConfig({
     root: './src',
     build: {
-        outDir: '../../feature-quick-start/dist',
+        outDir: '../../feature-quick-game/dist',
         emptyOutDir: true,
         lib: {
-            entry: path.resolve(__dirname, 'src/quick-start-view.js'),
-            name: 'feature-quick-start',
-            // fileName: 'featurequickstart.js' by default
+            entry: path.resolve(__dirname, 'src/feature-quick-game-view.js'),
+            name: 'feature-quick-game',
             formats: ['es']
         }
     },
     resolve: {
         alias: {
-            '@quick-start': path.resolve(__dirname, './feature-quick-start/src')
+            '@quick-game': path.resolve(__dirname, './feature-quick-game/src')
         }
     },
     server: {
