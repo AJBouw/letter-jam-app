@@ -20,6 +20,7 @@ export class DefaultLayout extends LitElement {
   createRenderRoot() { return this; }
   
   _renderNavItem(path, label) {
+    console.log('renderNavItem');
     const isActive = this.currentRoute === path;
     return html`
       <a href="${path}" class="${isActive ? 'active' : ''}"
@@ -41,7 +42,7 @@ export class DefaultLayout extends LitElement {
         <nav>
             ${this._renderNavItem('/', 'Home')}
             ${this._renderNavItem('/login', 'Login')}
-            ${this._renderNavItem('/quick-game', 'Quick Game')}
+            ${this._renderNavItem('/games/quick-game', 'Quick Game')}
         </nav>
 
         <main>
