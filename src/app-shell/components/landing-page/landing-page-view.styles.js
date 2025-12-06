@@ -1,6 +1,6 @@
 import { css } from 'lit';
 
-export const FeatureHomeStyles = [
+export const LandingPageViewStyles = [
     css`
     `
 ];

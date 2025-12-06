@@ -1,8 +1,8 @@
 import { computed } from '@preact/signals';
-import { featureHomeService } from './feature-home-service.js';
+import { featureHomeService } from '../api-service.js';
 import { navigateTo } from '../../../app-shell/routing/current-route.js';
 
-export class FeatureHomeViewModel {
+export class LandingPageViewModel {
   constructor() {
     this.service = featureHomeService;
     

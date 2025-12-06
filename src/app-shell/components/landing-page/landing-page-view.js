@@ -1,13 +1,13 @@
 import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
-import { navigateTo } from '../../../app-shell/routing/current-route.js';
-import { FeatureHomeViewStyles } from './feature-home-view.styles.js';
-import { featureHomeService } from './feature-home-service.js'
+import { navigateTo } from '../../routing/current-route.js';
+import { LandingPageViewStyles } from './landing-page-view.styles.js';
+import { featureHomeService } from '../api-service.js'
 import { SignalController} from './../../../../packages/common/lit/signal-controller.js';
 
-export class FeatureHomeView extends ScopedElementsMixin(LitElement) {
+export class LandingPageView extends ScopedElementsMixin(LitElement) {
   static scopedElements = {};
-  static styles = [FeatureHomeViewStyles];
+  static styles = [LandingPageViewStyles];
   
   constructor() {
     super();
@@ -71,4 +71,4 @@ export class FeatureHomeView extends ScopedElementsMixin(LitElement) {
   }
 }
 
-customElements.define('feature-home-view', FeatureHomeView);
+customElements.define('landing-page-view', LandingPageView);
