@@ -4,6 +4,7 @@ import { GlobalStore } from '../../../../packages/common/index.js';
 import { FeatureQuickGameService } from './feature-quick-game-service.js'
 import { emailValidatorSignal } from '../../../../packages/common/src/utils/validation/email-validator.js';
 import { nameValidatorSignal } from '../../../../packages/common/src/utils/validation/name-validator.js';
+import { toUrlSegment } from '../../converters/url-segment-converter.js';
 
 export class FeatureQuickGameViewModel {
   constructor() {
@@ -27,7 +28,7 @@ export class FeatureQuickGameViewModel {
     this.emailValidator = computed(() =>
       this.emailTouched.value
         ? emailValidatorSignal(this.email).value
-        : { valid: false, reason: null } // <--- treat untouched as invalid
+        : { valid: false, reason: null }
     );
 
     // Can submit only if fields are touched and valid
@@ -41,45 +42,50 @@ export class FeatureQuickGameViewModel {
 
   markNameTouched() { this.nameTouched.value = true; }
   markEmailTouched() { this.emailTouched.value = true; }
-
+  
   async quickStart() {
-    if (!this.canSubmit.value) return;
-
+    if (!this.canSubmit.value) {
+      console.log('Cannot submit, invalid fields');
+      return;
+    }
+    
     this.loading.value = true;
     this.backendError.value = null;
-
+    
     try {
-      const response = await FeatureQuickGameService.startQuickGame({
+      console.log('Sending quick game request with:', {
         name: this.name.value,
         email: this.email.value,
         language: this.language.value
       });
-
+      
+      const response = await FeatureQuickGameService.requestQuickGame({
+        name: this.name.value,
+        email: this.email.value,
+        language: this.language.value
+      });
+      
+      console.log('Response received:', response);
+      
       const gameData = response.data;
+      console.log('Game data extracted:', gameData);
+      
       GlobalStore.game.setGame(gameData);
-
+      console.log('Game stored in GlobalStore:', GlobalStore.game.game.value);
+      
       // Reset form
       this.name.value = '';
       this.email.value = '';
       this.language.value = 'nl';
       this.nameTouched.value = false;
       this.emailTouched.value = false;
-
-      // Navigate based on game status
-      switch (gameData.gameStatus) {
-        case 'WAITING_FOR_PLAYERS':
-          navigateTo('/quick-game/waiting-for-players');
-          break;
-        case 'READY_TO_START':
-          navigateTo('/quick-game/ready-to-start');
-          break;
-        case 'PLAYING':
-          navigateTo('/quick-game/playing');
-        default:
-          console.warn('Unhandled game status:', gameData.gameStatus);
-      }
-
+      
+      const statusSegment = toUrlSegment(gameData.gameStatus);
+      const url = `/games/quick-game/${gameData.uuid}/${statusSegment}`;
+      console.log(`[VM] Navigating to ${url}`);
+      navigateTo(url);
     } catch (err) {
+      console.error('Quick game request failed:', err);
       this.backendError.value = err.message || 'Unknown error';
     } finally {
       this.loading.value = false;

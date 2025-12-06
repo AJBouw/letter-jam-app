@@ -1,7 +1,7 @@
 import { ErrorHandler } from './utils/error-handler.js'
 
 export const FeatureQuickGameService = {
-  async startQuickGame(data) {
+  async requestQuickGame(data) {
     try {
       const res = await fetch('/games/quick-game', {
         method: 'POST',

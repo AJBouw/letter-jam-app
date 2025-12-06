@@ -1,7 +1,7 @@
 import { computed } from '@preact/signals';
 import { GlobalStore } from '../../../../../packages/common';
 
-export class PlayingViewModel {
+export class FeaturePlayingViewModel {
     constructor() {
         // Full reactive reference to the current game
         this.game = computed(() => GlobalStore.game.currentGame.value);

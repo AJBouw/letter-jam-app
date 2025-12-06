@@ -7,7 +7,7 @@ export default defineConfig({
         outDir: '../../feature-playing/dist',
         emptyOutDir: true,
         lib: {
-            entry: path.resolve(__dirname, 'src/playing/playing-view.js'),
+            entry: path.resolve(__dirname, 'src/playing/feature-playing-view.js'),
             name: 'feature-playing',
             // fileName: 'feature-playing.js' by default
             formats: ['es']

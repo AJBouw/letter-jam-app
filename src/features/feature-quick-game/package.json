@@ -1,5 +1,5 @@
 {
-  "name": "feature-home",
+  "name": "feature-quick-game",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -10,7 +10,7 @@
   "dependencies": {
     "@lit-labs/router": "^0.1.4",
     "@open-wc/scoped-elements": "^3.0.6",
-
+    "@preact/signals": "^2.5.1",
     "@webcomponents/scoped-custom-element-registry": "^0.0.10",
     "lit": "^3.3.1"
   },

@@ -1,9 +1,9 @@
 import { html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { LitElement } from 'lit';
-import { PlayingViewModel } from './playing-view-model';
+import { FeaturePlayingViewModel } from './feature-playing-view-model.js';
 
-export class PlayingView extends ScopedElementsMixin(LitElement) {
+export class FeaturePlayingView extends ScopedElementsMixin(LitElement) {
     static get scopedElements() {
         return {
 
@@ -22,7 +22,7 @@ export class PlayingView extends ScopedElementsMixin(LitElement) {
 
     constructor() {
         super();
-        this.vm = new PlayingViewModel();
+        this.vm = new FeaturePlayingViewModel();
     }
 
     render() {
@@ -46,4 +46,4 @@ export class PlayingView extends ScopedElementsMixin(LitElement) {
     }
 }
 
-customElements.define('playing-view', PlayingView);
+customElements.define('playing-view', FeaturePlayingView);
