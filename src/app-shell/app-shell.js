@@ -1,5 +1,4 @@
 import { html, LitElement } from 'lit';
-import { currentRoute, navigateTo } from './routing/current-route.js';
 import './routing/router-outlet.js';
 import './components/default-layout.js';
 import { GlobalStyles } from "../../global.styles.js";
