@@ -2,7 +2,7 @@ import { html, LitElement } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { FeatureLoginViewModel } from './feature-login-view-model.js';
 import { FeatureLoginViewStyles } from './feature-login-view.styles.js';
-import { SignalController } from "../../../../packages/common/lit/signal-controller.js";
+import { SignalController } from '@letter-limbo/common';
 
 export class FeatureLoginView extends ScopedElementsMixin(LitElement) {
   constructor() {

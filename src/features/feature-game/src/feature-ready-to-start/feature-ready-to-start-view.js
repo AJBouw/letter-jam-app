@@ -1,8 +1,8 @@
 import { html, LitElement } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
-import { ReadyToStartViewModel } from './ready-to-start-view-model.js';
+import { FeatureReadyToStartViewModel } from './feature-ready-to-start-view-model.js';
 
-export class ReadyToStartView extends ScopedElementsMixin(LitElement) {
+export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
     static get scopedElements() {
         return {
 
@@ -21,7 +21,7 @@ export class ReadyToStartView extends ScopedElementsMixin(LitElement) {
 
     constructor() {
         super();
-        this.vm = new ReadyToStartViewModel();
+        this.vm = new FeatureReadyToStartViewModel();
     }
 
     connectedCallback() {
@@ -54,4 +54,4 @@ export class ReadyToStartView extends ScopedElementsMixin(LitElement) {
     }
 }
 
-customElements.define('in-progress-view', ReadyToStartView);
+customElements.define('in-progress-view', FeatureReadyToStartView);

@@ -3,6 +3,7 @@ import { navigateTo } from '../../../../app-shell/routing/current-route.js';
 import { featureGameService } from "../feature-game-service.js";
 
 export class FeatureWaitingForPlayersViewModel {
+  
   constructor(uuid) {
     this.service = featureGameService;
     this.uuid = uuid;

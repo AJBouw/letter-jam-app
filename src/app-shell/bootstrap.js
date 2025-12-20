@@ -1,10 +1,8 @@
 import '@webcomponents/scoped-custom-element-registry';
 import './app-shell.js';
-import { ThemeService } from '../../packages/common/services/ThemeService.js';
+import { ThemeService } from '@letter-limbo/common';
 import { lightTheme, darkTheme } from '../../packages/common/src/ui/themes.js';
 import { GlobalStyles } from "../../global.styles.js";
-import { Router } from "@lit-labs/router";
-import { routes } from "./routing/routes.js";
 
 // Inject global styles
 const style = document.createElement('style');

@@ -1,32 +1,37 @@
 {
   "name": "letter-limbo-app",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "install:feature-home": "cd src/features/feature-home && npm i",
     "install:feature-login": "cd src/features/feature-login && npm i",
     "install:feature-quick-game": "cd src/features/feature-quick-game && npm i",
-    "install:all": "npm i && npm run install:feature-home && npm run install:feature-login && npm run install:feature-quick-game",
-    "build:feature-home": "cd src/features/feature-home && npm run build",
+    "install:feature-game": "cd src/features/feature-game && npm i",
+    "install:all": "npm i && npm run install:feature-login && npm run install:feature-quick-game && npm run install:feature-game",
     "build:feature-loging": "cd src/features/feature-login && npm run build",
     "build:feature-quick-game": "cd src/features/feature-quick-game && npm run build",
-    "build:all": "npm run build && npm run build:feature-quick-game && npm run build:feature-loging && npm run build:feature-home"
+    "build:feature-game": "cd src/features/feature-game && npm run build",
+    "build:all": "npm run build && npm run build:feature-quick-game && npm run build:feature-loging"
   },
   "dependencies": {
+    "@letter-limbo/common": "*",
     "@lit-labs/router": "0.1.4",
     "@open-wc/dedupe-mixin": "2.0.1",
     "@open-wc/scoped-elements": "3.0.6",
     "@preact/signals": "^2.5.1",
+    "@rollup/plugin-inject": "5.0.5",
     "@stomp/stompjs": "7.2.1",
     "@webcomponents/scoped-custom-element-registry": "0.0.10",
     "lit": "3.3.1",
     "sockjs-client": "1.6.1"
   },
   "devDependencies": {
-    "vite": "7.2.6"
-  }
+    "vite": "7.3.0"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }

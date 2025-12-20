@@ -1,16 +1,20 @@
 import { html, LitElement } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { FeatureWaitingForPlayersViewModel } from './feature-waiting-for-players-view-model.js';
-import { SignalController } from './../../../../../packages/common/lit/signal-controller.js'
+import { createGameWebSocket, sendGameMessage, SignalController } from '@letter-limbo/common'
 import { FeatureWaitingForPlayersViewStyles } from './feature-waiting-for-players-view.styles.js';
+import { subscribeWebSocketStatus, WebSocketStatus } from '@letter-limbo/common/web-socket/ws-status.js';
 
 export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement) {
-  static properties = { uuid: { type: String }}
-  
   constructor() {
     super();
-    // this.uuid = '';
-    // this.vm = null;
+    this.wsStatus = 'CONNECTING'
+  }
+  static properties = {
+    players: { state: true },
+    gameUuid: { state: true },
+    uuid: { type: String },
+    wsStatus: { state: true }
   }
   
   static scopedElements = {};
@@ -30,6 +34,20 @@ export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement
         this.vm.canStart
       ]);
     }
+    
+    this.wsStatus = WebSocketStatus.CONNECTING;
+    this.unsubscribeWsStatus = subscribeWebSocketStatus(status => { this.wsStatus = status; });
+    
+    this.client = createGameWebSocket(
+      this.gameUuid,
+      this._onGameMessage.bind(this)
+    );
+    
+    sendGameMessage(this.client, '/app/game/join', {
+      gameUuid: this.gameUuid,
+      playerUuid: this.playerUuid,
+      playerName: 'Player-' + this.playerUuid.slice(0, 4)
+    });
   }
   
   disconnectedCallback() {

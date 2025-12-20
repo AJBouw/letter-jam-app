@@ -3,7 +3,7 @@ import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { navigateTo } from '../../routing/current-route.js';
 import { LandingPageViewStyles } from './landing-page-view.styles.js';
 import { featureHomeService } from '../api-service.js'
-import { SignalController} from './../../../../packages/common/lit/signal-controller.js';
+import { SignalController} from '@letter-limbo/common';
 
 export class LandingPageView extends ScopedElementsMixin(LitElement) {
   static scopedElements = {};

@@ -1,9 +1,6 @@
 {
-  "name": "@common/core",
+  "name": "@letter-limbo/common",
   "version": "1.0.0",
-  "main": "src/index.js",
   "type": "module",
-  "dependencies": {
-    "@preact/signals": "^1.2.1"
-  }
+  "main": "index.js"
 }

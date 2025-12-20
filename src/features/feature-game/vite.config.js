@@ -4,10 +4,10 @@ import path from 'path';
 export default defineConfig({
     root: './src',
     build: {
-        outDir: '../../feature-playing/dist',
+        outDir: '../../feature-game/dist',
         emptyOutDir: true,
         lib: {
-            entry: path.resolve(__dirname, 'src/playing/feature-playing-view.js'),
+            entry: path.resolve(__dirname, 'src/feature-playing/feature-playing-view.js'),
             name: 'feature-playing',
             // fileName: 'feature-playing.js' by default
             formats: ['es']

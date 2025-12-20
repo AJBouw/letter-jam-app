@@ -1,6 +1,6 @@
 import { css } from 'lit';
 
-export const LoginViewStyles = [
+export const FeatureLoginViewStyles = [
     css`
         form {
             display: flex;
