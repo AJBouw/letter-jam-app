@@ -1,19 +1,13 @@
 import { LitElement, html } from 'lit';
+import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { currentRoute } from './current-route.js';
 import { FeatureQuickGameView } from '../../features/feature-quick-game/src/feature-quick-game-view.js';
 import { FeatureLoginView } from '../../features/feature-login/src/feature-login-view.js';
 import { LandingPageView } from '../components/landing-page/landing-page-view.js';
-import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
+import { WsTestView } from '../components/ws-test-view.js';
+import { WsSendTestView } from '../components/ws-send-test-view.js';
 
 export class RouterOutlet extends ScopedElementsMixin(LitElement) {
-  static scopedElements = {
-    'feature-quick-game-view': FeatureQuickGameView,
-    'feature-login-view': FeatureLoginView,
-    'landing-page-view': LandingPageView,
-  };
-  
-  static properties = { currentRoute: { state: true } };
-  
   constructor() {
     super();
     this.currentRoute = currentRoute.value;
@@ -22,6 +16,16 @@ export class RouterOutlet extends ScopedElementsMixin(LitElement) {
       this.currentRoute = route;
     });
   }
+  
+  static properties = { currentRoute: { state: true } };
+  
+  static scopedElements = {
+    'feature-quick-game-view': FeatureQuickGameView,
+    'feature-login-view': FeatureLoginView,
+    'landing-page-view': LandingPageView,
+    'ws-test-view': WsTestView,
+    'ws-send-test-view': WsSendTestView
+  };
   
   createRenderRoot() { return this; }
   
@@ -36,6 +40,10 @@ export class RouterOutlet extends ScopedElementsMixin(LitElement) {
         return html`<feature-login-view></feature-login-view>`;
       case path.startsWith('/games/quick-game'):
         return html`<feature-quick-game-view></feature-quick-game-view>`;
+      case path === '/test':
+        return html`<ws-test-view></ws-test-view>`;
+      case path === '/test/send':
+        return html`<ws-send-test-view></ws-send-test-view>`;
       default:
         return html`<h2>404 – Page Not Found</h2>`;
     }

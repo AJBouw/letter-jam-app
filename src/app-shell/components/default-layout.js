@@ -43,6 +43,8 @@ export class DefaultLayout extends LitElement {
             ${this._renderNavItem('/', 'Home')}
             ${this._renderNavItem('/login', 'Login')}
             ${this._renderNavItem('/games/quick-game', 'Quick Game')}
+            ${this._renderNavItem('/test', 'Test WS Subscribe')}
+            ${this._renderNavItem('/test/send', 'Test WS Publish')}
         </nav>
 
         <main>
