@@ -2,6 +2,7 @@ import { LitElement, html } from 'lit';
 import { navigateTo, currentRoute } from "../routing/current-route.js";
 import { DefaultLayoutStyles } from './default-layout.styles.js';
 import { TopBarView } from './top-bar/top-bar-view.js'
+import { appService } from './app-service.js';
 
 export class DefaultLayout extends LitElement {
   static properties = {
@@ -17,7 +18,19 @@ export class DefaultLayout extends LitElement {
     currentRoute.subscribe(r => this.currentRoute = r);
   }
   
-  createRenderRoot() { return this; }
+  connectedCallback() {
+    super.connectedCallback();
+    
+    // Subscribe to route changes
+    currentRoute.subscribe(r => this.currentRoute = r);
+    
+    // Ping backend immediately
+    (async () => {
+      await appService.checkBackend();
+    })();
+  }
+  
+  createRenderRoot() { return this; } // Render in light DOM
   
   _renderNavItem(path, label) {
     console.log('renderNavItem');
@@ -42,7 +55,7 @@ export class DefaultLayout extends LitElement {
         <nav>
             ${this._renderNavItem('/', 'Home')}
             ${this._renderNavItem('/login', 'Login')}
-            ${this._renderNavItem('/games/quick-game', 'Quick Game')}
+            ${this._renderNavItem('/games/quick-start', 'Quick Start')}
             ${this._renderNavItem('/test', 'Test WS Subscribe')}
             ${this._renderNavItem('/test/send', 'Test WS Publish')}
         </nav>

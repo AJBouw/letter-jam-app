@@ -1,22 +1,45 @@
-import { computed } from '@preact/signals';
-import { featureHomeService } from '../api-service.js';
-import { navigateTo } from '../../../app-shell/routing/current-route.js';
+import { signal } from '@preact/signals';
+import { navigateTo } from '../../routing/current-route.js';
+import { landingPageService } from './landing-page-service.js';
+import { WebSocketService, WebSocketStatus } from '@letter-limbo/common';
 
 export class LandingPageViewModel {
   constructor() {
-    this.service = featureHomeService;
-    
-    // Derived signal: just names of featured games
-    this.featuredGameNames = computed(() =>
-      this.service.featuredGames.value.map(game => game.name)
-    );
+    this.service = landingPageService;
+    this.wsService = new WebSocketService();
+    this._backendInterval = null;
+    this.wsStatus = signal(WebSocketStatus.DISCONNECTED);
+    this._unsubscribeWs = null;
+    this._wsClient = null;
   }
   
-  // Example action: navigate to a game
+  start() {
+    // Poll backend health every 5 seconds
+    this.service.checkBackend();
+    this._backendInterval = setInterval(() => {
+      this.service.checkBackend();
+    }, 5000);
+    
+    this._unsubscribeWs = this.wsService.subscribeStatus(status => {
+      this.wsStatus.value = status;
+    });
+    
+    this._wsClient = this.wsService.connect();
+  }
+  
+  stop() {
+    if (this._backendInterval) {
+      clearInterval(this._backendInterval);
+      this._backendInterval = null;
+    }
+    this._unsubscribeWs?.();
+    this.wsService.disconnect();
+  }
+  
   startGame(gameId) {
-    switch(gameId) {
+    switch (gameId) {
       case 1:
-        navigateTo('/quick-game');
+        navigateTo('/games/quick-start');
         break;
       case 2:
         navigateTo('/challenge-mode');
@@ -25,12 +48,12 @@ export class LandingPageViewModel {
         navigateTo('/multiplayer-tournament');
         break;
       default:
-        console.warn('Unknown game id', gameId);
+        console.warn('Unknown game', gameId);
     }
   }
   
-  // Optional: refresh data
-  async refreshLandingData() {
-    await this.service.fetchLandingData();
-  }
+  // Expose signals
+  get welcomeMessage() { return this.service.welcomeMessage; }
+  get featuredGames() { return this.service.featuredGames; }
+  get backendError() { return this.service.backendError; }
 }

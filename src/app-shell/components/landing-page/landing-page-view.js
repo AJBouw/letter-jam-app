@@ -1,67 +1,65 @@
 import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
-import { navigateTo } from '../../routing/current-route.js';
+import { SignalController } from '@letter-limbo/common';
+import { LandingPageViewModel } from './landing-page-view-model.js';
 import { LandingPageViewStyles } from './landing-page-view.styles.js';
-import { featureHomeService } from '../api-service.js'
-import { SignalController} from '@letter-limbo/common';
 
 export class LandingPageView extends ScopedElementsMixin(LitElement) {
-  static scopedElements = {};
-  static styles = [LandingPageViewStyles];
-  
   constructor() {
     super();
-    this.service = featureHomeService; // use singleton
-    
-    // Create reactive controller
-    this._signals = new SignalController(this, [
-      this.service.welcomeMessage,
-      this.service.featuredGames,
-      this.service.loading,
-      this.service.backendError
-    ]);
+    this.vm = new LandingPageViewModel();
+    this._signals = null;
+    this.backendCheckInterval = null;
   }
   
-  startGame(gameId) {
-    switch(gameId) {
-      case 1:
-        navigateTo('/quick-game');
-        break;
-      case 2:
-        navigateTo('/challenge-mode');
-        break;
-      case 3:
-        navigateTo('/multiplayer-tournament');
-        break;
-      default:
-        console.warn('Unknown game id', gameId);
-    }
-  }
+  static styles = [ LandingPageViewStyles ];
   
   connectedCallback() {
     super.connectedCallback();
-    // Fetch data only when component is mounted
-    (async () => {
-      await this.service.fetchLandingData();
-    })();  }
-  
-  createRenderRoot() {
-    return this; // render in light DOM
+    
+    this._signals = new SignalController(this, [
+      this.vm.welcomeMessage,
+      this.vm.featuredGames,
+      this.vm.backendError,
+      this.vm.wsStatus
+    ]);
+    
+    this.vm.start();
   }
   
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.vm.stop();
+  }
+  
+  createRenderRoot() { return this; } // Render in light DOM
+  
   render() {
-    const { welcomeMessage, featuredGames, loading, backendError } = this.service;
+    const { welcomeMessage, featuredGames, backendError } = this.vm;
     
     return html`
+      <section class="high-lights">
+        <h3>High Lights</h3>
+        <p>
+          Backend status:
+          ${backendError.value
+      ? html`<span class="error">❌ ${backendError.value}</span>`
+      : html`<span class="ok">✅ Running</span>`}
+        </p>
+          <p>
+            Realtime WS:
+            ${this.vm.wsStatus.value === 'CONNECTED'
+              ? html`<span class="ok">✅ Available</span>`
+              : html`<span class="error">❌ Unavailable</span>`}
+          </p>
+      </section>
+
       <section class="home-landing">
         <h2>${welcomeMessage.value}</h2>
 
-        ${loading.value ? html`<p>Loading...</p>` : null}
-        ${backendError.value ? html`<div class="error">${backendError.value}</div>` : null}
-
         <ul>
           ${featuredGames.value.map(game => html`
-            <li @click=${() => this.startGame(game.id)} style="cursor:pointer;">
+            <li @click=${() => this.vm.startGame(game.id)}>
               ${game.name}
             </li>
           `)}

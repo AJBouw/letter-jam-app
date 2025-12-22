@@ -1,5 +1,6 @@
-import { loadingStore } from '../data/loading-store.js';
-import { errorStore } from '../data/error-store.js';
+import { AppConfig } from '../config/app-config.js';
+import { loadingStore } from '../store/loading-store.js';
+import { errorStore } from '../store/error-store.js';
 
 /**
  * Wraps any async function to auto-handle loading + error state
@@ -20,40 +21,28 @@ export async function apiCall(key, asyncFn) {
   }
 }
 
-const API_BASE = 'http://localhost:8080';
-
-/**
- * GET wrapper
- */
 export async function apiGet(key, path) {
   return apiCall(key, async () => {
-    const res = await fetch(API_BASE + path);
-    
+    const res = await fetch(`${AppConfig.apiBase}${path}`);
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body.message || res.statusText);
     }
-    
     return res.json();
   });
 }
 
-/**
- * POST wrapper
- */
 export async function apiPost(key, path, body) {
   return apiCall(key, async () => {
-    const res = await fetch(API_BASE + path, {
+    const res = await fetch(`${AppConfig.apiBase}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
-    
     if (!res.ok) {
-      const error = await res.json().catch(() => ({}));
-      throw new Error(error.message || res.statusText);
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || res.statusText);
     }
-    
     return res.json();
   });
 }
