@@ -9,7 +9,6 @@ export class LandingPageView extends ScopedElementsMixin(LitElement) {
     super();
     this.vm = new LandingPageViewModel();
     this._signals = null;
-    this.backendCheckInterval = null;
   }
   
   static styles = [ LandingPageViewStyles ];
@@ -20,6 +19,7 @@ export class LandingPageView extends ScopedElementsMixin(LitElement) {
     this._signals = new SignalController(this, [
       this.vm.welcomeMessage,
       this.vm.featuredGames,
+      this.vm.backendStatus,
       this.vm.backendError,
       this.vm.wsStatus
     ]);

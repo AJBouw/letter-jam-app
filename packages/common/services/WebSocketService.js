@@ -11,10 +11,12 @@ export class WebSocketService {
     
     setWebSocketStatus(WebSocketStatus.CONNECTING);
     
-    this.client = createGameWebSocket(gameUuid, (msg) => {
-      onMessage(msg);
-    }, playerUuid, playerName);
+    // this.client = createGameWebSocket(gameUuid, (msg) => {
+    //   onMessage(msg);
+    // }, playerUuid, playerName);
+    this.client = createGameWebSocket(gameUuid, onMessage, playerUuid, playerName);
     
+    // Intercept low-level events to update status
     this.client.onConnect = () => setWebSocketStatus(WebSocketStatus.CONNECTED);
     this.client.onWebSocketClose = () => setWebSocketStatus(WebSocketStatus.DISCONNECTED);
     this.client.onWebSocketError = () => setWebSocketStatus(WebSocketStatus.ERROR);

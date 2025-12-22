@@ -8,6 +8,7 @@ export * from './config/app-config.js'
 export * from './lit/signal-controller.js'
 
 // Services
+export * from './services/BackendService.js';
 export * from './services/ThemeService.js';
 export * from './services/WebSocketService.js';
 
