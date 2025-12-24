@@ -1,28 +1,31 @@
-import { computed, signal } from '@preact/signals';
-import { GlobalStore } from '../../../../../packages/common';
-import { navigateTo } from '../../../../app-shell/routing/current-route.js';
+import { effect, signal } from '@preact/signals';
 
 export class FeatureReadyToStartViewModel {
-    constructor() {
-        const game = GlobalStore.game.currentGame;
-
-        this.game = computed(() => game.value);
-        this.playerReady = signal({});
-
-        this.allReady = computed(() => {
-            const g = this.game.value;
-            if (!g?.players) return false;
-            return g.players.every(p => this.playerReady.value[p.uuid]);
-        });
+  constructor(session, wsService) {
+    this.session = session;
+    this.wsService = wsService;
+    
+    this.gameUuid = session.gameUuid;
+    this.me = signal(this.session.currentPlayer.value ?? null);
+    this.opponent = signal(session.playersList?.value?.find(p => p.uuid !== this.me.value?.uuid));
+    
+    // Automatically update me/opponent if session changes
+    this._dispose = effect(() => {
+      this.me.value = session.currentPlayer?.value;
+      this.opponent.value = session.playersList?.value?.find(p => p.uuid !== this.me.value?.uuid);
+    });
+  }
+  
+  markReady() {
+    if (!this.session.currentPlayer.value.readyToStart) {
+      this.session.wsService.send({
+        type: 'MARK_READY',
+        playerUuid: this.session.playerUuid.value
+      });
     }
-
-    setReady(uuid) {
-        this.playerReady.value = { ...this.playerReady.value, [uuid]: true };
-
-        // reactive navigation
-        if (this.allReady.value) {
-            console.log('navigate')
-            navigateTo('/quick-game/playing');
-        }
-    }
+  }
+  
+  dispose() {
+    this._dispose?.();
+  }
 }

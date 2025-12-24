@@ -1,70 +1,57 @@
-import { computed, signal } from '@preact/signals';
+import { effect, signal } from '@preact/signals';
+import { GameStatus, webSocketService } from '@letter-limbo/common';
 import { navigateTo } from '../../../../app-shell/routing/current-route.js';
-import { featureGameService } from "../feature-game-service.js";
 
 export class FeatureWaitingForPlayersViewModel {
-  
-  constructor(uuid) {
-    this.service = featureGameService;
-    this.uuid = uuid;
+  constructor(session, wsService) {
+    this.session = session;
+    this.wsService = wsService;
     
-    console.log('[VM] FeatureWaitingForPlayersViewModel created with UUID:', this.uuid);
+    this.playersList = signal([]);
+    this.currentPlayer = signal(null);
+    this.opponent = signal(null);
+    this.gameUuid = signal(this.session.gameUuid.value);
+    this.language = signal(this.session.language.value);
+    this.playerName = signal(this.session.playerName.value);
+    this.playerUuid = signal(this.session.playerUuid.value);
+    this.playersList = signal([...this.session.playersList.value]);
+    this.maxPlayers = signal(this.session.maxPlayers.value);
+    this.private = signal(this.session.private.value);
+    this.gameStatus = signal(this.session.gameStatus.value);
     
-    // Start polling for game updates
-    this.service.startPolling(this.uuid);
+    this.me = signal(this.session.currentPlayer.value ?? null);
+    this.opponents = signal([...this.session.opponents.value]);
     
-    // Derived signals
-    this.playersList = computed(() => {
-      const list = this.service.currentGame.value?.playersList || [];
-      console.log('[VM] playersList updated:', list);
-      return list;
+    this._syncEffect = effect(() => {
+      this.gameUuid.value = this.session.gameUuid.value;
+      this.language.value = this.session.language.value;
+      this.playerName.value = this.session.playerName.value;
+      this.playerUuid.value = this.session.playerUuid.value;
+      this.playersList.value = [...this.session.playersList.value];
+      this.currentPlayer.value = this.session.currentPlayer.value;
+      this.opponent.value = this.session.opponent.value;
+      this.maxPlayers.value = this.session.maxPlayers.value;
+      this.private.value = this.session.private.value;
+      this.gameStatus.value = this.session.gameStatus.value;
+
+      this.me.value = this.session.currentPlayer.value ?? null;
+      this.opponents.value = [...this.session.opponents.value];
     });
     
-    this.maxPlayers = computed(() => {
-      const max = this.service.currentGame.value?.maxPlayers || 0;
-      console.log('[VM] maxPlayers updated:', max);
-      return max;
-    });
+    // Subscribe to WS messages
+    this._wsUnsub = this.wsService.subscribe(msg => this.session.handleMessage(msg));
     
-    this.gameStatus = computed(() => {
-      const status = this.service.currentGame.value?.gameStatus || 'WAITING_FOR_PLAYERS';
-      console.log('[VM] gameStatus updated:', status);
-      return status;
-    });
-    
-    // Button state
-    this.canStart = computed(() => {
-      const ready = this.gameStatus.value === 'READY_TO_START';
-      console.log('[VM] canStart computed:', ready);
-      return ready;
-    });
-    
-    // Automatic navigation when all players joined
-    this._checkNavigation = () => {
-      if (this.canStart.value) {
-        console.log('[VM] All players ready, navigating to playing page');
-        this.service.stopPolling();
-        navigateTo(`/games/quick-game/${this.uuid}/playing`);
+    // Navigation effect
+    this._navEffect = effect(() => {
+      if (this.session.gameStatus.value === GameStatus.READY_TO_START) {
+        navigateTo(`/games/${this.session.gameUuid.value}/ready-to-start`);
       }
-    };
-    
-    // Subscribe to changes
-    this._unsubscribe = [
-      this.playersList.subscribe(this._checkNavigation),
-      this.maxPlayers.subscribe(this._checkNavigation),
-      this.gameStatus.subscribe(this._checkNavigation)
-    ];
+    });
   }
   
-  disconnect() {
-    console.log('[VM] Disconnecting view model, stopping polling');
-    this._unsubscribe.forEach(fn => fn());
-    this.service.stopPolling();
-  }
-  
-  async cancelWaiting() {
-    console.log('[VM] Cancel waiting clicked');
-    await this.service.cancelWaiting(this.uuid);
-    navigateTo('/'); // back to home
+  dispose() {
+    this._syncEffect();
+    this._navEffect();
+    this._wsUnsub?.();
   }
 }

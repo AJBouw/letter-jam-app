@@ -1,14 +1,19 @@
 // API
-export * from './api/api-wrapper.js'
+export * from './api/api-wrapper.js';
 
 // Config
-export * from './config/app-config.js'
+export * from './config/app-config.js';
+
+// Domain
+export * from './domain/game-session.js';
+export * from './domain/game-status.js';
 
 // Lit
-export * from './lit/signal-controller.js'
+export * from './lit/signal-controller.js';
 
 // Services
 export * from './services/BackendService.js';
+export * from './services/Connectivity.js';
 export * from './services/ThemeService.js';
 export * from './services/WebSocketService.js';
 
@@ -23,8 +28,7 @@ export * from './utils/validation/email-validator.js';
 export * from './utils/validation/name-validator.js';
 export * from './utils/validation/password-validator.js';
 export * from './utils/validation/username-validator.js';
-export * from './utils/validation/validation-types.js';
 
 // Web Socket
-export * from './web-socket/game-websocket.js'
-export * from './web-socket/ws-status.js'
+export * from './web-socket/game-websocket.js';
+export * from './web-socket/ws-status.js';

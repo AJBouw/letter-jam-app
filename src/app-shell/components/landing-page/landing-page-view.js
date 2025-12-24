@@ -1,13 +1,13 @@
 import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
-import { SignalController } from '@letter-limbo/common';
+import { backendService, GameSession, SignalController, webSocketService } from '@letter-limbo/common';
 import { LandingPageViewModel } from './landing-page-view-model.js';
 import { LandingPageViewStyles } from './landing-page-view.styles.js';
 
 export class LandingPageView extends ScopedElementsMixin(LitElement) {
   constructor() {
     super();
-    this.vm = new LandingPageViewModel();
+    this.vm = new LandingPageViewModel(backendService, GameSession, webSocketService);
     this._signals = null;
   }
   
@@ -15,15 +15,13 @@ export class LandingPageView extends ScopedElementsMixin(LitElement) {
   
   connectedCallback() {
     super.connectedCallback();
-    
     this._signals = new SignalController(this, [
       this.vm.welcomeMessage,
-      this.vm.featuredGames,
-      this.vm.backendStatus,
-      this.vm.backendError,
-      this.vm.wsStatus
+      this.vm.loading,
+      this.vm.canSubmit,
+      this.vm.connectivity.backendOk,
+      this.vm.connectivity.wsOk
     ]);
-    
     this.vm.start();
   }
   
@@ -35,35 +33,33 @@ export class LandingPageView extends ScopedElementsMixin(LitElement) {
   createRenderRoot() { return this; } // Render in light DOM
   
   render() {
-    const { welcomeMessage, featuredGames, backendError } = this.vm;
-    
     return html`
       <section class="high-lights">
         <h3>High Lights</h3>
-        <p>
-          Backend status:
-          ${backendError.value
-      ? html`<span class="error">❌ ${backendError.value}</span>`
-      : html`<span class="ok">✅ Running</span>`}
-        </p>
-          <p>
-            Realtime WS:
-            ${this.vm.wsStatus.value === 'CONNECTED'
-              ? html`<span class="ok">✅ Available</span>`
-              : html`<span class="error">❌ Unavailable</span>`}
-          </p>
+        <div class="status-badge ${this.vm.connectivity.backendOk.value ? 'ok' : 'error'}">
+          Backend: ${this.vm.connectivity.backendOk.value ? '✅ OK' : `❌ ${this.vm.connectivity.backendError.value || 'Down'}`}
+        </div>
+        <div class="status-badge ${this.vm.connectivity.wsOk.value ? 'ok' : 'error'}">
+          WS: ${this.vm.connectivity.wsOk.value ? '✅ Connected' : '❌ Disconnected'}
+        </div>
       </section>
 
       <section class="home-landing">
-        <h2>${welcomeMessage.value}</h2>
+        <h2>${this.vm.welcomeMessage.value}</h2>
 
-        <ul>
-          ${featuredGames.value.map(game => html`
-            <li @click=${() => this.vm.startGame(game.id)}>
-              ${game.name}
-            </li>
-          `)}
-        </ul>
+        ${this.vm.loading.value
+          ? html`<div class="loading-spinner">Loading…</div>`
+          : html`
+            <ul>
+              ${this.vm.featuredGames.value.map(game => html`
+                <li
+                  class="${!this.vm.canSubmit.value ? 'disabled' : ''}"
+                  @click=${() => this.vm.startGame(game.id)}>
+                  ${game.name}
+                </li>
+              `)}
+            </ul>
+          `}
       </section>
     `;
   }

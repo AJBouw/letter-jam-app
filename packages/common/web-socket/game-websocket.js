@@ -1,64 +1,50 @@
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { AppConfig } from '../config/app-config.js';
 import { setWebSocketStatus, WebSocketStatus } from "./ws-status.js";
 
-export function createGameWebSocket(gameUuid, onMessage) {
+export function createGameWebSocket(gameUuid, onMessage, playerUuid, playerName) {
+  console.log('[WS] createGameWebSocket');
   const client = new Client({
-    webSocketFactory: () => new SockJS('http://localhost:8080/ws-game'),
+    webSocketFactory: () => new SockJS(AppConfig.wsUrl),
     reconnectDelay: 5000,
-    debug: (str) => console.debug('[STOMP]', str)
+    debug: (msg) => console.log('[STOMP]', msg),
   });
   
   client.onConnect = () => {
-    console.debug('[WS] Connected to game WS');
+    console.log('[WS] Connected');
     setWebSocketStatus(WebSocketStatus.CONNECTED);
     
-    // Subscribe to game updates
-    client.subscribe(`/topic/game/${gameUuid}`, (msg) => {
-      const body = JSON.parse(msg.body);
-      onMessage(body);
-    });
+    client.subscribe(`/topic/game/${gameUuid}`, (msg) => onMessage(JSON.parse(msg.body)));
+    
+    if (playerUuid && playerName) {
+      client.publish({
+        destination: `/app/game/${gameUuid}/join`,
+        body: JSON.stringify({ playerUuid, playerName }),
+      });
+    }
   };
   
-  client.onStompError = frame => {
+  client.onStompError = (frame) => {
     console.error('[WS] STOMP error', frame);
     setWebSocketStatus(WebSocketStatus.ERROR);
-  }
+  };
   
-  client.onWebSocketClose = () => {
-    console.warn('[WS] Disconnected');
-    setWebSocketStatus(WebSocketStatus.DISCONNECTED);
-  }
-  
-  client.onWebSocketError = err => {
-    console.error('[WS] Websocket error', err);
+  client.onWebSocketError = (evt) => {
+    console.error('[WS] WebSocket error', evt);
     setWebSocketStatus(WebSocketStatus.ERROR);
-  }
+  };
   
-  client.onUnhandledMessage = msg => {
-    console.debug('[WS] Unhandled message', msg.body);
-    onMessage(JSON.parse(msg.body));
-  }
-  
+  client.onWebSocketClose = (evt) => {
+    console.warn('[WS] WebSocket disconnected', evt);
+    setWebSocketStatus(WebSocketStatus.DISCONNECTED);
+  };
+  setWebSocketStatus(WebSocketStatus.CONNECTING);
   client.activate();
-  
   return client;
 }
 
-/**
- * Send game message
- * @param client
- * @param destination
- * @param payload
- */
 export function sendGameMessage(client, destination, payload) {
-  if (!client?.connected) {
-    console.warn('[WS] Tried to send while disconnected');
-    return;
-  }
-  
-  client.publish({
-    destination,
-    body: JSON.stringify(payload),
-  });
+  if (!client || !client.active) return;
+  client.publish({ destination, body: JSON.stringify(payload) });
 }

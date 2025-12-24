@@ -1,0 +1,7 @@
+export const GameStatus = Object.freeze({
+  FORM: 'FORM',
+  WAITING_FOR_PLAYERS: 'WAITING_FOR_PLAYERS',
+  READY_TO_START: 'READY_TO_START',
+  PLAYING: 'PLAYING',
+  FINISHED: 'FINISHED'
+});

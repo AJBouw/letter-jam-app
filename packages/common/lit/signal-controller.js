@@ -1,3 +1,6 @@
+/**
+ * Listens for changes on signals and triggers requestUpdate() automatically
+ * */
 export class SignalController {
   constructor(host, signals = []) {
     this.host = host;

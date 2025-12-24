@@ -21,6 +21,7 @@
     "@lit-labs/router": "0.1.4",
     "@open-wc/dedupe-mixin": "2.0.1",
     "@open-wc/scoped-elements": "3.0.6",
+    "@preact/preset-vite": "2.10.2",
     "@preact/signals": "^2.5.1",
     "@rollup/plugin-inject": "5.0.5",
     "@stomp/stompjs": "7.2.1",
