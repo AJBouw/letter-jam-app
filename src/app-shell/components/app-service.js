@@ -10,7 +10,7 @@ class AppService {
       const res = await fetch('/api/health');
       if (!res.ok) throw new Error(`Backend returned ${res.status}`);
       const data = await res.json();
-      if (data.status !== 'UP') throw new Error('Backend unhealthy');
+      if (data.gameStatus !== 'UP') throw new Error('Backend unhealthy');
       this.backendError.value = null; // backend is up
     } catch (err) {
       this.backendError.value =
