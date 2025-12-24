@@ -5,7 +5,8 @@ import { GlobalStyles } from "../../global.styles.js";
 
 export class AppShell extends LitElement {
   static styles = [ GlobalStyles ];
-  createRenderRoot() { return this; }
+  
+  createRenderRoot() { return this; } // Render in light DOM
   
   render() {
     return html`
