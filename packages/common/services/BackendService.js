@@ -5,7 +5,6 @@ export class BackendService {
     this.healthUrl = healthUrl;
     this.pollInterval = pollInterval;
     
-    // reactive signal for view
     this.status = signal(null); // null | 'UP' | 'DOWN'
     this.error = signal(null);
     
@@ -17,13 +16,11 @@ export class BackendService {
       const res = await fetch(this.healthUrl);
       if (!res.ok) throw new Error(`Backend returned ${res.status}`);
       const data = await res.json();
-      if (data.status !== 'UP') throw new Error('Backend unhealthy');
-      
-      this.status.value = 'UP';
+      this.status.value = data.status === 'UP' ? 'UP' : 'DOWN';
       this.error.value = null;
     } catch (err) {
       this.status.value = 'DOWN';
-      this.error.value = 'Backend server is not running. Please start it to continue.';
+      this.error.value = 'Backend server is not running';
       console.error('[BackendService]', err.message);
     }
   }
@@ -46,3 +43,6 @@ export class BackendService {
     return this.status.subscribe(callback);
   }
 }
+
+// Singleton instance
+export const backendService = new BackendService();
