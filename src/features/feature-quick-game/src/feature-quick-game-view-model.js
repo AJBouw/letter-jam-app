@@ -1,22 +1,18 @@
 import { signal, computed, effect } from '@preact/signals'
-import { connectivity, emailValidatorSignal, GameStatus, nameValidatorSignal, webSocketService } from '@letter-limbo/common';
+import { emailValidatorSignal, GameStatus, nameValidatorSignal } from '@letter-limbo/common';
 import { FeatureQuickGameService } from './FeatureQuickGameService.js';
 
+/**
+ * Observe GameSession
+ * Expose derived UI state
+ * Handle navigation side-effects
+ */
 export class FeatureQuickGameViewModel {
-  constructor(session) {
-    this.session = session;
-    this.connectivity = connectivity;
+  constructor(gameSession, connectivityService, webSocketService) {
+    this.session = gameSession;
+    this.connectivity = connectivityService;
+    this.wsService = webSocketService;
     this.service = new FeatureQuickGameService();
-    
-    this.screen = computed(() => {
-      console.log('session.gameStatus.value', session.gameStatus.value);
-      switch (session.gameStatus.value) {
-        case GameStatus.WAITING_FOR_PLAYERS: return 'WAITING';
-        case GameStatus.READY_TO_START: return 'READY';
-        case GameStatus.PLAYING: return 'PLAYING';
-        default: return 'FORM';
-      }
-    });
     
     // Form state
     this.name = signal('');
@@ -32,6 +28,43 @@ export class FeatureQuickGameViewModel {
     
     // UI state
     this.loading = signal(true);
+    this.screen = signal('FORM');
+    
+    // Derived screen
+    this.screen = computed(() => {
+      if (!this.session.gameUuid.value) return 'FORM';
+      switch (this.session.gameStatus.value) {
+        case GameStatus.WAITING_FOR_PLAYERS:
+          return 'WAITING';
+        case GameStatus.READY_TO_START:
+          return 'READY';
+        case GameStatus.PLAYING:
+          return 'PLAYING';
+        case GameStatus.FINISHED:
+          return 'FINISHED';
+        default:
+          return 'FORM';
+      }
+    });
+    
+    // Navigation
+    this.nextRoute = signal(null);
+    effect(() => {
+      switch (this.screen.value) {
+        case 'WAITING':
+          console.debug('[feature-quick-game-view-model] screen waiting');
+          this.nextRoute.value = `/games/${this.session.gameUuid.value}/waiting`;
+          break;
+        case 'READY':
+          console.debug('[feature-quick-game-view-model] screen ready');
+          this.nextRoute.value = `/games/${this.session.gameUuid.value}/ready-to-start`;
+          break;
+        case 'PLAYING':
+          console.debug('[feature-quick-game-view-model] screen playing');
+          this.nextRoute.value = `/games/${this.session.gameUuid.value}/playing`;
+          break;
+      }
+    });
     
     this.canSubmit = computed(() =>
       this.nameTouched.value &&
@@ -59,8 +92,13 @@ export class FeatureQuickGameViewModel {
     this.connectivity.stop();
   }
   
-  markNameTouched() { this.nameTouched.value = true; }
-  markEmailTouched() { this.emailTouched.value = true; }
+  markNameTouched() {
+    this.nameTouched.value = true;
+  }
+  
+  markEmailTouched() {
+    this.emailTouched.value = true;
+  }
   
   async startQuickGame() {
     if (!this.canSubmit.value) return;
@@ -75,24 +113,23 @@ export class FeatureQuickGameViewModel {
       });
       
       const gameData = response.data;
-      console.log('[VM] response', response);
-      console.log('[VM] response', gameData);
       
-      this.session.gameUuid.value = gameData.uuid;
-      console.log('[VM] gameuuid ', gameData.uuid);
-      
+      // Apply full backend snapshot after viewer is set
       this.session.applyBackendSnapshot(gameData);
       
-      const me = gameData.currentPlayer ?? gameData.playersList[0];
-      this.session.currentPlayer.value = me;
-      this.session.playerUuid.value = me.uuid;
-      this.session.playerName.value = me.name;
+      // Connect to WS
+      const me = this.session.playersList.value.find(
+        p => p.uuid === this.session.playerUuid.value
+      );
+      if (me) {
+        this.wsService.connect(
+          this.session.gameUuid.value,
+          msg => this.session.handleMessage(msg),
+          me.uuid,
+          me.name
+        );
+      }
       
-      webSocketService.connect(gameData.uuid,msg => this.session.handleMessage(msg), me.uuid, me.name);
-      
-      this.loading.value = false;
-      console.log('[vm] screen value ', this.screen.value);
-      // this.screen.value = 'WAITING';
       // Reset form
       this.name.value = '';
       this.email.value = '';

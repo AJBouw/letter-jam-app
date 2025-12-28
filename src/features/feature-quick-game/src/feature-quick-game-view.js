@@ -3,15 +3,16 @@ import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { navigateTo } from '../../../app-shell/routing/current-route.js';
 import { FeatureQuickGameViewModel } from './feature-quick-game-view-model.js';
 import { FeatureQuickGameViewStyles } from './feature-quick-game-view.styles.js';
-import { GameSession, SignalController, webSocketService } from '@letter-limbo/common';
+import { connectivityService, GameSession, SignalController, wsService } from '@letter-limbo/common';
 import { FeatureWaitingForPlayersView } from './../../feature-game/src/feature-waiting-for-players/feature-waiting-for-players-view.js';
 import { FeatureReadyToStartView } from './../../feature-game/src/feature-ready-to-start/feature-ready-to-start-view.js';
 import { FeaturePlayingView } from './../../feature-game/src/feature-playing/feature-playing-view.js';
+import { effect, signal } from "@preact/signals";
 
 export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
   constructor() {
     super();
-    this.vm = new FeatureQuickGameViewModel(GameSession);
+    this.vm = new FeatureQuickGameViewModel(GameSession, connectivityService, wsService);
   }
   
   static scopedElements = {
@@ -24,7 +25,7 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
   
   connectedCallback() {
     super.connectedCallback();
-    this._signals = new SignalController(this, [
+    this.signals = new SignalController(this, [
       this.vm.loading,
       this.vm.screen,
       this.vm.canSubmit,
@@ -36,28 +37,21 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
       this.vm.emailValidation,
       this.vm.session.gameStatus,
       this.vm.session.playersList,
-      this.vm.session.currentPlayer,
+      this.vm.session.allPlayersReady,
+      this.vm.session.thisPlayerIsReady,
+      this.vm.session.activePlayerUuid,
+      this.vm.session.activePlayerName,
       this.vm.session.opponents,
-      this.vm.session.blocks,
+      this.vm.session.blocks
     ]);
+    
     this.vm.start();
     
-    // Auto-navigate when screen changes
-    this._screenEffect = this.vm.screen.subscribe(screen => {
-      console.log('screen effect:', screen);
-      console.log('gameUuid:', this.vm.session.gameUuid.value);
-      console.log('gameStatus:', this.vm.session.gameStatus.value);
-      
-      switch(screen) {
-        case 'WAITING':
-          navigateTo(`/games/${this.vm.session.gameUuid.value}/waiting`);
-          break;
-        case 'READY':
-          navigateTo(`/games/${this.vm.session.gameUuid.value}/ready-to-start`);
-          break;
-        case 'PLAYING':
-          navigateTo(`/games/${this.vm.session.gameUuid.value}/playing`);
-          break;
+    // Reactive navigation
+    effect(() => {
+      if (this.vm.nextRoute.value) {
+        navigateTo(this.vm.nextRoute.value);
+        this.vm.nextRoute.value = null;
       }
     });
   }
@@ -65,12 +59,13 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
   disconnectedCallback() {
     super.disconnectedCallback();
     this.vm.stop();
-    this._screenEffect?.();
   }
   
-  createRenderRoot() { return this; } // Render in light DOM
+  // createRenderRoot() { return this; } // Render in light DOM
   
   _renderForm() {
+    console.debug('[feature-quick-game-view] this.vm: ', this.vm);
+    
     return html`
       <div class="status-container">
         <div class="status-badge ${this.vm.connectivity.backendOk.value ? 'ok' : 'error'}">
@@ -109,38 +104,39 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
       return html`<div class="loading-spinner">Loading…</div>`;
     }
     
-    const screen = this.vm.screen.value;
-    console.debug('[FQG VIEW] screen: ', screen);
-    switch (screen) {
+    console.debug('[feature-quick-game-view] screen: ', this.vm.screen.value);
+    
+    switch (this.vm.screen.value) {
       case 'FORM': return this._renderForm();
       case 'WAITING':
-        console.debug('Return feature-waiting-for-players-view')
+        console.debug('[feature-quick-game-view] screen: feature-waiting-for-players-view')
         return html`
           <feature-waiting-for-players-view
             .session=${this.vm.session}
-            .wsService=${webSocketService}
+            .wsService=${wsService}
           ></feature-waiting-for-players-view>
         `;
       case 'READY':
-        console.debug('Return feature-ready-to-start-view')
+        console.debug('[feature-quick-game-view] screen: feature-ready-to-start-view')
         return html`
           <feature-ready-to-start-view
             .session=${this.vm.session}
           ></feature-ready-to-start-view>
         `;
       case 'PLAYING':
-        console.debug('Return feature-playing-view')
+        console.debug('[feature-quick-game-view] screen: feature-playing-view')
         return html`
           <feature-playing-view
             .session=${this.vm.session}
           ></feature-playing-view>
         `;
       case 'FINISHED':
-        console.debug('Return Finished')
+        console.debug('[feature-quick-game-view] screen: Finished')
         return html`
           <h2>Game Finished</h2>
         `;
       default:
+        console.debug('[feature-quick-game-view] screen: default')
         return this._renderForm();
     }
   }

@@ -12,7 +12,7 @@ export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement
   static styles = [ FeatureWaitingForPlayersViewStyles ];
   
   disconnectedCallback() {
-    this.vm?.dispose();
+    this.vm?.dispose?.();
     super.disconnectedCallback();
   }
   
@@ -26,36 +26,34 @@ export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement
   }
   
   render() {
-    if (!this.session || !this.wsService) {
-      return html`<div>Loading…</div>`;
+    console.debug('[feature-waiting-for-players-view] this.vm', this.vm);
+    
+    if (!this.session || !this.wsService || !this.vm) {
+      return html`<div>Loading waiting for players…</div>`;
     }
     
-    const { gameUuid, language, maxPlayers, private: isPrivate, playersList, currentPlayer } = this.session;
+    const session = this.vm?.session;
     
-    if (!gameUuid?.value || !playersList?.value || !currentPlayer?.value) {
-      return html`<div>Loading game…</div>`;
-    }
+    const me = this.vm.me.value;
+    console.debug('[feature-waiting-for-players-view] me: ', me);
     
     return html`
         <h3>Waiting for players</h3>
 
-        <div>Game: ${gameUuid.value}</div>
+        <div>Game: ${session.gameUuid.value}</div>
         <div>
-            Me: ${currentPlayer.value.name}
-                (${currentPlayer.value.uuid})
+            Me: ${me.name} (${me.uuid})
         </div>
-        <div>Language: ${language.value}</div>
-        <div>Max players: ${maxPlayers.value}</div>
-        <div>Private: ${isPrivate.value ? 'Yes' : 'No'}</div>
-
-        <ul>
-            ${playersList.value.map(p => html`
-                <li>
-                    ${p.name} (${p.uuid})
-                    ${p.readyToStart ? '✅ Ready' : '⏳ Not Ready'}
-                </li>
-            `)}
-        </ul>
+        <div>Language: ${session.language.value}</div>
+        <div>Max players: ${session.maxPlayers.value}</div>
+        <div>Private: ${session.private.value ? 'Yes' : 'No'}</div>
+        <button
+          class="btn btn-secondary"
+          @click=${() => this.vm.cancelWaiting()}
+          disabled=${this.vm.cancelling.value}
+        >
+            Cancel
+        </button>
     `;
   }
 }

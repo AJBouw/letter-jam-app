@@ -5,7 +5,7 @@ export const WebSocketStatus = {
   ERROR: 'ERROR'
 };
 
-let status = WebSocketStatus.CONNECTING;
+let status = WebSocketStatus.DISCONNECTED;
 const listeners = new Set();
 
 export function setWebSocketStatus(newStatus) {
