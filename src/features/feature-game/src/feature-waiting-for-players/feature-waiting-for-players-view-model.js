@@ -3,48 +3,52 @@ import { GameStatus } from '@letter-limbo/common';
 import { navigateTo } from '../../../../app-shell/routing/current-route.js';
 import { FeatureQuickGameService } from '../../../feature-quick-game/src/FeatureQuickGameService.js';
 export class FeatureWaitingForPlayersViewModel {
-  constructor(session, wsService) {
-    this.session = session;
+  constructor(sharedGameSession, wsService, connectivityService) {
+    this.sharedGameSession = sharedGameSession;
     this.wsService = wsService;
+    this.connectivityService = connectivityService;
     this.service = new FeatureQuickGameService();
     
     // Core game identifiers
-    this.gameUuid = computed(() => session.gameUuid.value);
-    this.gameStatus = computed(() => session.gameStatus.value);
-    this.language = computed(() => session.language.value);
-    this.maxPlayers = computed(() => session.maxPlayers.value);
-    this.private = computed(() => session.private.value);
+    this.gameUuid = computed(() => this.sharedGameSession.gameUuid.value);
+    this.gameStatus = computed(() => this.sharedGameSession.gameStatus.value);
+    this.language = computed(() => this.sharedGameSession.language.value);
+    this.maxPlayers = computed(() => this.sharedGameSession.maxPlayers.value);
+    this.private = computed(() => this.sharedGameSession.private.value);
     
     // Players
-    this.playersList = computed(() => this.session.playersList.value);
+    this.playersList = computed(() => this.sharedGameSession.playersList.value);
     
     // Viewer-based
-    this.playerUuid = computed(() => session.playerUuid.value);
-    this.playerName = computed(() => session.playerName.value);
-    this.thisPlayerIsReady = computed(() => session.thisPlayerIsReady.value);
+    this.playerUuid = computed(() => this.sharedGameSession.playerUuid.value);
+    this.playerName = computed(() => this.sharedGameSession.playerName.value);
+    this.thisPlayerIsReady = computed(() => this.sharedGameSession.thisPlayerIsReady.value);
     
-    // Computed
-    this.me = computed(() =>
-      session.playersList.value.find(p => p.uuid === session.playerUuid.value) ?? null
-    );
+    this.me = this.sharedGameSession.me;
     console.debug('[feature-waiting-for-players-view-model] this.me: ', this.me);
     
-    this.opponent = computed(() =>
-      session.playersList.value.find(p => p.uuid !== session.playerUuid.value) ?? null
-    );
+    this.opponent = this.sharedGameSession.opponent;
     console.debug('[feature-waiting-for-players-view-model] this.opponent: ', this.opponent);
     
     // Navigation effect
     this._navEffect = effect(() => {
-      if (this.session.gameStatus.value === GameStatus.READY_TO_START &&
-        this.session.playersList.value.length > 1) {
-        navigateTo(`/games/${this.session.gameUuid.value}/ready-to-start`);
+      if (this.sharedGameSession.gameStatus.value === GameStatus.READY_TO_START &&
+        this.sharedGameSession.playersList.value.length > 1) {
+        navigateTo(`/games/${this.sharedGameSession.gameUuid.value}/ready-to-start`);
+      }
+    });
+    
+    this._connectivityEffect = effect(() => {
+      if (this.connectivityService) {
+        console.log('[WaitingVM] backendOk:', this.connectivityService.backendOk.value,
+          'wsServerOk:', this.connectivityService.wsServerOk.value);
       }
     });
   }
   
   dispose() {
     this._navEffect();
+    this._connectivityEffect();
   }
   
   cancelling = signal(false);
@@ -55,9 +59,9 @@ export class FeatureWaitingForPlayersViewModel {
     this.cancelling.value = true;
     
     try {
-      await this.service.cancelQuickGame(
-        this.session.gameUuid.value,
-        this.session.playerUuid.value
+      await this.service.cancelGame(
+        this.sharedGameSession.gameUuid.value,
+        this.sharedGameSession.playerUuid.value
       );
     } catch (err) {
       console.error('Failed to cancel game', err);

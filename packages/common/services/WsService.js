@@ -1,8 +1,8 @@
-import { WebSocketStatus, getWebSocketStatus, setWebSocketStatus, subscribeWebSocketStatus } from '../web-socket/ws-status.js';
+import { WebSocketStatus, wsServerStatus } from '../web-socket/ws-status.js';
 import { Client } from '@stomp/stompjs';
-import { signal } from "@preact/signals";
 import { AppConfig } from '../config/app-config.js';
 import SockJS from "sockjs-client";
+import { computed, signal } from "@preact/signals";
 
 /**
  * Track message subscribers per topic
@@ -12,167 +12,173 @@ import SockJS from "sockjs-client";
 export class WsService {
   constructor() {
     this.stompClient = null;
-    this.status = signal(WebSocketStatus.DISCONNECTED);
-    this.subscriptions = {}; // topic -> subscription object
+    this.wsStatus = signal(WebSocketStatus.DISCONNECTED);
+    this.wsServerOk = signal(false);
+    
+    /**
+     * @type {Record<string, {
+     *   destination: string,
+     *   callback: (payload: any) => void,
+     *   sub: any
+     * }>}
+     */
+    
+    this.subscriptions = {};
+    
+    this._connectInProgress = false;
+    
+    // Ensure recovery after tab sleep / focus loss
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[WS] Tab became visible → ensure connection');
+        this.connectForStatus();
+      }
+    });
+
+    window.addEventListener('focus', () => {
+      console.log('[WS] Window focused → ensure connection');
+      this.connectForStatus();
+    });
   }
   
-  /**
-   * Connect to a game WebSocket topic
-   * @param {string} gameUuid
-   * @param {(msg) => void} onMessage
-   * @param {string} playerUuid
-   * @param {string} playerName
-   */
-  connect(gameUuid, onMessage, playerUuid, playerName) {
-    // Deactivate existing client if connected
-    if (this.stompClient && this.stompClient.connected) {
-      this.stompClient.deactivate();
-      this.subscriptions = {};
+  connectForStatus() {
+    if (this._statusConnectInProgress) return;
+    this._statusConnectInProgress = true;
+    
+    const tryConnect = () => {
+      if (this._connectInProgress) return;
+      
+      if (this.stompClient?.connected) {
+        this._statusConnectInProgress = false;
+        return;
+      }
+      
+      this._connectInProgress = true;
+      this.wsStatus.value = WebSocketStatus.CONNECTING;
+      
+      console.log('[WS] Connecting…');
+      
+      const socket = new SockJS(AppConfig.wsUrl);
+      
+      this.stompClient = new Client({
+        webSocketFactory: () => socket,
+        reconnectDelay: 5000,
+        heartbeatIncoming: 10000,
+        heartbeatOutgoing: 10000,
+        
+        onConnect: () => {
+          console.log('[WS] Connected to server');
+          this.wsStatus.value = WebSocketStatus.CONNECTED;
+          this.wsServerOk.value = true;
+          
+          this._connectInProgress = false;
+          this._statusConnectInProgress = false;
+          
+          this._resubscribeAll();
+        },
+        
+        onStompError: (frame) => {
+          console.error('[WS] STOMP error', frame);
+          this._handleDisconnect();
+        },
+        
+        onWebSocketClose: (evt) => {
+          console.warn('[WS] WebSocket closed', evt);
+          this._handleDisconnect();
+        },
+        
+        onWebSocketError: (evt) => {
+          console.error('[WS] WebSocket error', evt);
+          this._handleDisconnect();
+        }
+      });
+      
+      this.stompClient.activate();
+    };
+    
+    tryConnect();
+  }
+  
+  async connectToGame(gameUuid, callback) {
+    this.connectForStatus();
+    
+    const destination = `/topic/games/${gameUuid}`;
+    
+    // Remove old subscription if present
+    if (this.subscriptions[gameUuid]?.sub) {
+      this.subscriptions[gameUuid].sub.unsubscribe();
     }
     
-    const socket = new SockJS(AppConfig.wsUrl);
+    let sub = null;
     
-    this.stompClient = new Client({
-      webSocketFactory: () => socket,
-      reconnectDelay: 5000,
-      debug: (msg) => console.debug('[STOMP]', msg),
+    if (this.stompClient?.connected) {
+      sub = this.stompClient.subscribe(destination, msg => {
+        this._handleMessage(gameUuid, msg);
+      });
       
-      // STOMP lifecycle hooks
-      onConnect: () => {
-        console.debug('[WS] Connected to game topic', gameUuid);
-        this.status.value = WebSocketStatus.CONNECTED;
-        this.subscribe(`/topic/games/${gameUuid}`, onMessage);
-      },
-      
-      onStompError: (frame) => {
-        console.error('[WS] STOMP error:', frame);
-        this.status.value = WebSocketStatus.ERROR;
-      },
-      
-      onWebSocketError: (evt) => {
-        console.error('[WS] WebSocket error:', evt);
-        this.status.value = WebSocketStatus.ERROR;
-      },
-      
-      onWebSocketClose: (evt) => {
-        console.warn('[WS] WebSocket disconnected', evt);
-        this.status.value = WebSocketStatus.DISCONNECTED;
-        this.subscriptions = {};
-      }
-    });
+      console.log('[WS] Subscribed to', destination);
+    }
     
-    this.status.value = WebSocketStatus.CONNECTING;
-    this.stompClient.activate();
+    // Persist subscription data for reconnect
+    this.subscriptions[gameUuid] = {
+      destination,
+      callback,
+      sub
+    };
   }
   
-  /**
-   * Subscribe to a STOMP topic
-   * @param {string} destination
-   * @param {(msg) => void} callback
-   */
-  subscribe(destination, callback) {
-    if (!this.stompClient || !this.stompClient.connected) return;
+  _handleDisconnect() {
+    this.wsStatus.value = WebSocketStatus.DISCONNECTED;
+    this.wsServerOk.value = false;
     
-    if (this.subscriptions[destination]) return; // already subscribed
+    this._connectInProgress = false;
+    this._statusConnectInProgress = false;
     
-    const sub = this.stompClient.subscribe(destination, (msg) => {
-      try {
-        const payload = JSON.parse(msg.body);
-        callback(payload);
-      } catch (err) {
-        console.error('[WS] Failed to parse message', msg, err);
-      }
-    });
+    console.log('[WS] Scheduling reconnect in 3s');
     
-    this.subscriptions[destination] = sub;
+    setTimeout(() => {
+      this.connectForStatus();
+    }, 3000);
   }
   
-  /**
-   * Send a message to a STOMP destination
-   * @param {string} destination
-   * @param {object} payload
-   */
+  _handleMessage(gameUuid, msg) {
+    try {
+      const payload = JSON.parse(msg.body);
+      this.subscriptions[gameUuid]?.callback(payload);
+    } catch (err) {
+      console.error('[WS] Failed to parse message', msg, err);
+    }
+  }
+  
+  _resubscribeAll() {
+    if (!this.stompClient?.connected) return;
+    
+    console.log('[WS] Restoring subscriptions');
+    
+    Object.entries(this.subscriptions).forEach(([gameUuid, entry]) => {
+      entry.sub = this.stompClient.subscribe(entry.destination, msg => {
+        this._handleMessage(gameUuid, msg);
+      });
+    });
+  }
+  
   send(destination, payload) {
-    if (!this.stompClient || !this.stompClient.connected) return;
+    if (!this.stompClient?.connected) return;
     
     this.stompClient.publish({
       destination,
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
   }
   
-  /**
-   * Disconnect WebSocket and clear subscriptions
-   */
-  disconnect() {
-    if (this.stompClient) {
-      this.stompClient.deactivate();
-      this.stompClient = null;
-    }
+  disconnectAll() {
+    Object.values(this.subscriptions).forEach(entry => {
+      entry.sub?.unsubscribe();
+    });
+    
     this.subscriptions = {};
-    this.status.value = WebSocketStatus.DISCONNECTED;
-  }
-  
-  /**
-   * Check connection state
-   */
-  get isConnected() {
-    return this.status.value === WebSocketStatus.CONNECTED;
   }
 }
 
-// export class WsService {
-//   constructor() {
-//     this.client = null;
-//     this.gameSubscription = null;
-//
-//     // Track current status in the service
-//     this.wsStatus = { value: getWebSocketStatus() };
-//
-//     // Subscribe to global status changes to update wsStatus.value
-//     subscribeWebSocketStatus(status => { this.wsStatus.value = status; });
-//   }
-//
-//   connect(gameUuid = 'landing-page', onMessage = () => {}, playerUuid = null, playerName = null) {
-//     if (this.client) return this.client;
-//
-//     setWebSocketStatus(WebSocketStatus.CONNECTING);
-//
-//     this.client = createGameWebSocket(gameUuid, msg => { onMessage(msg); this.subscribers.forEach(cb => cb(msg)); }, playerUuid, playerName);
-//
-//     // Intercept low-level events to update status
-//     this.client.onConnect = () => setWebSocketStatus(WebSocketStatus.CONNECTED);
-//     this.client.onWebSocketClose = () => setWebSocketStatus(WebSocketStatus.DISCONNECTED);
-//     this.client.onWebSocketError = () => setWebSocketStatus(WebSocketStatus.ERROR);
-//
-//     return this.client;
-//   }
-//
-//   disconnect() {
-//     if (this.client) {
-//       this.client.deactivate?.();
-//       this.client = null;
-//       setWebSocketStatus(WebSocketStatus.DISCONNECTED);
-//     }
-//   }
-//
-//   subscribe(callback) {
-//     this.subscribers.push(callback);
-//     return () => { this.subscribers = this.subscribers.filter(cb => cb !== callback); };
-//   }
-//
-//   subscribeStatus(callback) {
-//     return subscribeWebSocketStatus(callback);
-//   }
-//
-//   sendMessage(destination, payload) {
-//     if (!this.client || !this.client.active) return;
-//     this.client.publish({ destination, body: JSON.stringify(payload) });
-//   }
-//
-//   get isConnected() {
-//     return this.wsStatus.value === WebSocketStatus.CONNECTED;
-//   }
-// }
-
+// Singleton
 export const wsService = new WsService();

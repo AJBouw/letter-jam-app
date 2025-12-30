@@ -2,48 +2,44 @@ import { html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { LitElement } from 'lit';
 import { FeaturePlayingViewModel } from './feature-playing-view-model.js';
+import { FeaturePlayingViewStyles } from './feature-playing-view.styles.js';
 
 export class FeaturePlayingView extends ScopedElementsMixin(LitElement) {
-    static get scopedElements() {
-        return {
-
-        };
+  static properties = {
+    sharedGameSession: { type: Object },
+    wsService: { type: Object },
+    connectivityService: { type: Object}
+  };
+  
+  static styles = [ FeaturePlayingViewStyles ];
+  
+  disconnectedCallback() {
+    this.vm.dispose();
+    super.disconnectedCallback();
+  }
+  
+  createRenderRoot() { return this; } // Render in light DOM
+  
+  updated(changedProps) {
+    if (!this.vm && this.sharedGameSession && this.wsService) {
+      this.vm = new FeaturePlayingViewModel(
+        this.sharedGameSession,
+        this.wsService,
+        this.connectivityService
+      );
     }
-
-    static get styles() {
-        return [
-
-        ];
-    }
-
-    static properties = {
-
-    };
-
-    constructor() {
-        super();
-        this.vm = new FeaturePlayingViewModel();
-    }
-
-    render() {
-        const game = this.vm.game.value;
-        const players = this.vm.players.value;
-
-        if (!game) return html`<p>Waiting for game data...</p>`;
-
-        return html`
-            <h2>Playing</h2>
-
-            ${this.vm.waitingForOpponent.value
-                    ? html`<p>Waiting for opponent...</p>`
-                    : html`<ul>
-                    ${players.map(p => html`<li>${p.name} - Score: ${p.score}</li>`)}
-                  </ul>`
-            }
-
-            <p>Status: ${game.gameStatus}</p>
-        `;
-    }
+  }
+  
+  render() {
+    
+    return html`
+        <section class="game-playing">
+            <!-- Header with player info -->
+            <header class="players-header">
+                test
+        </section>
+    `;
+  }
 }
 
-customElements.define('playing-view', FeaturePlayingView);
+customElements.define('feature-playing-view', FeaturePlayingView);

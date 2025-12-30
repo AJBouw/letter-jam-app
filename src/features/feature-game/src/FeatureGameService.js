@@ -1,11 +1,11 @@
 import { apiPost } from '@letter-limbo/common';
 
-export class FeatureQuickGameService {
-  async requestQuickGame(data) {
+export class FeatureGameService {
+  async markPlayerReady(gameUuid, playerUuid) {
     return apiPost(
-      'quick-start',
-      '/games/quick-start',
-      data);
+      'mark-ready',
+      `/games/${gameUuid}/players/${playerUuid}/ready`,
+      {});
   }
   
   async cancelGame(gameUuid, playerUuid) {

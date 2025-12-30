@@ -5,8 +5,9 @@ import { FeatureWaitingForPlayersViewStyles } from './feature-waiting-for-player
 
 export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement) {
   static properties = {
-    session: { type: Object },
-    wsService: { type: Object }
+    sharedGameSession: { type: Object },
+    wsService: { type: Object },
+    connectivityService: { type: Object}
   };
   
   static styles = [ FeatureWaitingForPlayersViewStyles ];
@@ -19,8 +20,8 @@ export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement
   createRenderRoot() { return this; } // Render in light DOM
   
   updated(changedProps) {
-    if (!this.vm && this.session && this.wsService) {
-      this.vm = new FeatureWaitingForPlayersViewModel(this.session, this.wsService);
+    if (!this.vm && this.sharedGameSession && this.wsService) {
+      this.vm = new FeatureWaitingForPlayersViewModel(this.sharedGameSession, this.wsService, this.connectivityService);
       this.requestUpdate();
     }
   }
@@ -28,11 +29,11 @@ export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement
   render() {
     console.debug('[feature-waiting-for-players-view] this.vm', this.vm);
     
-    if (!this.session || !this.wsService || !this.vm) {
+    if (!this.sharedGameSession || !this.wsService || !this.vm) {
       return html`<div>Loading waiting for players…</div>`;
     }
     
-    const session = this.vm?.session;
+    const session = this.vm?.sharedGameSession;
     
     const me = this.vm.me.value;
     console.debug('[feature-waiting-for-players-view] me: ', me);

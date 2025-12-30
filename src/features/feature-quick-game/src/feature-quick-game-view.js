@@ -3,16 +3,19 @@ import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { navigateTo } from '../../../app-shell/routing/current-route.js';
 import { FeatureQuickGameViewModel } from './feature-quick-game-view-model.js';
 import { FeatureQuickGameViewStyles } from './feature-quick-game-view.styles.js';
-import { connectivityService, GameSession, SignalController, wsService } from '@letter-limbo/common';
+import { SignalController } from '@letter-limbo/common';
 import { FeatureWaitingForPlayersView } from './../../feature-game/src/feature-waiting-for-players/feature-waiting-for-players-view.js';
 import { FeatureReadyToStartView } from './../../feature-game/src/feature-ready-to-start/feature-ready-to-start-view.js';
 import { FeaturePlayingView } from './../../feature-game/src/feature-playing/feature-playing-view.js';
-import { effect, signal } from "@preact/signals";
+import { effect } from "@preact/signals";
 
 export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
-  constructor() {
-    super();
-    this.vm = new FeatureQuickGameViewModel(GameSession, connectivityService, wsService);
+  static properties = {
+    gameUuid: { type: String },
+    subRoute: { type: String },
+    sharedGameSession: { type: Object },
+    wsService: { type: Object },
+    connectivityService: { type: Object }
   }
   
   static scopedElements = {
@@ -25,6 +28,15 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
   
   connectedCallback() {
     super.connectedCallback();
+    
+    if (!this.sharedGameSession) {
+      console.error('[FeatureQuickGameView] gameSession not provided!');
+      return;
+    }
+    
+    // Initialize VM with the shared session and imported wsService
+    this.vm = new FeatureQuickGameViewModel(this.sharedGameSession, this.wsService, this.connectivityService);
+    
     this.signals = new SignalController(this, [
       this.vm.loading,
       this.vm.screen,
@@ -35,14 +47,14 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
       this.vm.emailTouched,
       this.vm.nameValidation,
       this.vm.emailValidation,
-      this.vm.session.gameStatus,
-      this.vm.session.playersList,
-      this.vm.session.allPlayersReady,
-      this.vm.session.thisPlayerIsReady,
-      this.vm.session.activePlayerUuid,
-      this.vm.session.activePlayerName,
-      this.vm.session.opponents,
-      this.vm.session.blocks
+      this.vm.sharedGameSession.gameStatus,
+      this.vm.sharedGameSession.playersList,
+      this.vm.sharedGameSession.allPlayersReady,
+      this.vm.sharedGameSession.thisPlayerIsReady,
+      this.vm.sharedGameSession.activePlayerUuid,
+      this.vm.sharedGameSession.activePlayerName,
+      this.vm.sharedGameSession.opponents,
+      this.vm.sharedGameSession.blocks
     ]);
     
     this.vm.start();
@@ -65,14 +77,14 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
   
   _renderForm() {
     console.debug('[feature-quick-game-view] this.vm: ', this.vm);
-    
+    console.log('canSubmit:', this.vm.canSubmit.value, 'loading:', this.vm.loading.value);
     return html`
       <div class="status-container">
-        <div class="status-badge ${this.vm.connectivity.backendOk.value ? 'ok' : 'error'}">
-          Backend: ${this.vm.connectivity.backendOk.value ? '✅ OK' : `❌ ${this.vm.connectivity.backendError.value || 'Down'}`}
+        <div class="status-badge ${this.vm.connectivityService.backendOk.value ? 'ok' : 'error'}">
+            Backend: ${this.vm.connectivityService.backendOk.value ? '✅ OK' : '❌ Down'}
         </div>
-        <div class="status-badge ${this.vm.connectivity.wsOk.value ? 'ok' : 'error'}">
-          WS: ${this.vm.connectivity.wsOk.value ? '✅ Connected' : '❌ Disconnected'}
+        <div class="status-badge ${this.vm.connectivityService.wsServerOk.value ? 'ok' : 'error'}">
+            WS Server: ${this.vm.connectivityService.wsServerOk.value ? '✅ Connected' : '❌ Disconnected'}
         </div>
       </div>
 
@@ -100,7 +112,7 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
   }
   
   _renderNested() {
-    if (!this.vm || !this.vm.session || !this.vm.session.playersList.value) {
+    if (!this.vm || !this.vm.sharedGameSession || !this.vm.sharedGameSession.playersList.value) {
       return html`<div class="loading-spinner">Loading…</div>`;
     }
     
@@ -112,22 +124,22 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
         console.debug('[feature-quick-game-view] screen: feature-waiting-for-players-view')
         return html`
           <feature-waiting-for-players-view
-            .session=${this.vm.session}
-            .wsService=${wsService}
+            .session=${this.vm.sharedGameSession}
+            .wsService=${this.wsService}
           ></feature-waiting-for-players-view>
         `;
       case 'READY':
         console.debug('[feature-quick-game-view] screen: feature-ready-to-start-view')
         return html`
           <feature-ready-to-start-view
-            .session=${this.vm.session}
+            .session=${this.vm.sharedGameSession}
           ></feature-ready-to-start-view>
         `;
       case 'PLAYING':
         console.debug('[feature-quick-game-view] screen: feature-playing-view')
         return html`
           <feature-playing-view
-            .session=${this.vm.session}
+            .session=${this.vm.sharedGameSession}
           ></feature-playing-view>
         `;
       case 'FINISHED':

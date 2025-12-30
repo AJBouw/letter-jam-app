@@ -8,10 +8,10 @@ import { FeatureQuickGameService } from './FeatureQuickGameService.js';
  * Handle navigation side-effects
  */
 export class FeatureQuickGameViewModel {
-  constructor(gameSession, connectivityService, webSocketService) {
-    this.session = gameSession;
-    this.connectivity = connectivityService;
+  constructor(sharedGameSession, webSocketService, connectivityService) {
+    this.sharedGameSession = sharedGameSession;
     this.wsService = webSocketService;
+    this.connectivityService = connectivityService;
     this.service = new FeatureQuickGameService();
     
     // Form state
@@ -30,10 +30,13 @@ export class FeatureQuickGameViewModel {
     this.loading = signal(true);
     this.screen = signal('FORM');
     
+    // this.backendOk = this.connectivityService.backendOk;
+    // this.wsServerOk = this.connectivityService.wsServerOk;
+    
     // Derived screen
     this.screen = computed(() => {
-      if (!this.session.gameUuid.value) return 'FORM';
-      switch (this.session.gameStatus.value) {
+      if (!this.sharedGameSession.gameUuid.value) return 'FORM';
+      switch (this.sharedGameSession.gameStatus.value) {
         case GameStatus.WAITING_FOR_PLAYERS:
           return 'WAITING';
         case GameStatus.READY_TO_START:
@@ -53,15 +56,15 @@ export class FeatureQuickGameViewModel {
       switch (this.screen.value) {
         case 'WAITING':
           console.debug('[feature-quick-game-view-model] screen waiting');
-          this.nextRoute.value = `/games/${this.session.gameUuid.value}/waiting`;
+          this.nextRoute.value = `/games/${this.sharedGameSession.gameUuid.value}/waiting`;
           break;
         case 'READY':
           console.debug('[feature-quick-game-view-model] screen ready');
-          this.nextRoute.value = `/games/${this.session.gameUuid.value}/ready-to-start`;
+          this.nextRoute.value = `/games/${this.sharedGameSession.gameUuid.value}/ready-to-start`;
           break;
         case 'PLAYING':
           console.debug('[feature-quick-game-view-model] screen playing');
-          this.nextRoute.value = `/games/${this.session.gameUuid.value}/playing`;
+          this.nextRoute.value = `/games/${this.sharedGameSession.gameUuid.value}/playing`;
           break;
       }
     });
@@ -71,25 +74,49 @@ export class FeatureQuickGameViewModel {
       this.emailTouched.value &&
       this.nameValidation.value.valid &&
       this.emailValidation.value.valid &&
-      this.connectivity.canSubmit.value &&
+      this.connectivityService.backendOk.value &&
+      this.connectivityService.wsServerOk.value &&
       !this.loading.value
+      
     );
     
     // Auto-reset loading once backend + WS are up
     effect(() => {
-      if (this.connectivity.backendOk.value && this.connectivity.wsOk.value) {
-        this.loading.value = false;
-      }
+      const nameTouched = this.nameTouched.value;
+      const emailTouched = this.emailTouched.value;
+      const nameValid = this.nameValidation.value.valid;
+      const emailValid = this.emailValidation.value.valid;
+      const backendOk = this.connectivityService.backendOk.value;
+      const wsOk = this.connectivityService.wsServerOk.value;
+      const loading = this.loading.value;
+      
+      const canSubmit = nameTouched && emailTouched && nameValid && emailValid && backendOk && wsOk && !loading;
+      
+      console.log('[canSubmit debug]', {
+        nameTouched,
+        emailTouched,
+        nameValid,
+        emailValid,
+        backendOk,
+        wsOk,
+        loading,
+        canSubmit
+      });
+      
+      if (this.connectivityService.backendOk.value && this.connectivityService.wsServerOk.value) this.loading.value = false;
+      
     });
   }
   
   start() {
     this.loading.value = true;
-    this.connectivity.start('quick-game-lobby');
+    
+    // Persistent backend and WS heartbeat
+    this.connectivityService.start();
   }
   
   stop() {
-    this.connectivity.stop();
+    this.connectivityService.stop();
   }
   
   markNameTouched() {
@@ -115,16 +142,16 @@ export class FeatureQuickGameViewModel {
       const gameData = response.data;
       
       // Apply full backend snapshot after viewer is set
-      this.session.applyBackendSnapshot(gameData);
+      this.sharedGameSession.applyBackendSnapshot(gameData);
       
       // Connect to WS
-      const me = this.session.playersList.value.find(
-        p => p.uuid === this.session.playerUuid.value
+      const me = this.sharedGameSession.playersList.value.find(
+        p => p.uuid === this.sharedGameSession.playerUuid.value
       );
       if (me) {
-        this.wsService.connect(
-          this.session.gameUuid.value,
-          msg => this.session.handleMessage(msg),
+        await this.wsService.connectToGame(
+          this.sharedGameSession.gameUuid.value,
+          msg => this.sharedGameSession.handleMessage(msg),
           me.uuid,
           me.name
         );
@@ -136,6 +163,8 @@ export class FeatureQuickGameViewModel {
       this.language.value = 'nl';
       this.nameTouched.value = false;
       this.emailTouched.value = false;
+    } catch (err) {
+      console.error('[QuickGame] Failed to start', err);
     } finally {
       this.loading.value = false;
     }

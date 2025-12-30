@@ -1,11 +1,13 @@
 import { html, LitElement } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { FeatureReadyToStartViewModel } from './feature-ready-to-start-view-model.js';
+import { effect } from "@preact/signals";
 
 export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
   static properties = {
-    session: { type: Object },
-    wsService: { type: Object }
+    sharedGameSession: { type: Object },
+    wsService: { type: Object },
+    connectivityService: { type: Object}
   };
   
   static styles = [ ];
@@ -18,69 +20,72 @@ export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
   createRenderRoot() { return this; } // Render in light DOM
   
   updated(changedProps) {
-    if (!this.vm && this.session && this.wsService) {
-      this.vm = new FeatureReadyToStartViewModel(this.session, this.wsService);
-      this.requestUpdate();
+    if (!this.vm && this.sharedGameSession && this.wsService) {
+      this.vm = new FeatureReadyToStartViewModel(
+        this.sharedGameSession,
+        this.wsService,
+        this.connectivityService
+      );
+      
+      // Create effect ONCE
+      this._signalEffect = effect(() => {
+        this.vm.thisPlayerIsReady.value;
+        this.vm.opponent?.value?.readyToStart;
+        this.vm.markingReady.value;
+        this.vm.playersList.value;
+        // Trigger Lit re-render
+        this.requestUpdate();
+      });
     }
   }
   
   render() {
-    console.log('[feature-ready-to-start-view] this.vm', this.vm);
+    if (!this.vm) return html`<div>Loading…</div>`;
     
-    if (!this.session || !this.wsService || !this.vm) {
-      return html`<div>Loading ready to start…</div>`;
-    }
     const me = this.vm.me.value;
     const opponent = this.vm.opponent.value;
-    console.log('[feature-ready-to-start-view] me: ', me);
-    console.log('[feature-ready-to-start-view] me.name: ', me.name);
-    console.log('[feature-ready-to-start-view] opponent: ', opponent);
-    console.log('[feature-ready-to-start-view] opponent.name: ', opponent.name);
-    
-    
-    console.debug('[feature-waiting-for-players-view] me: ', me);
-    
-    if (!this.vm || !this.session) {
-      return html`<div>Loading ready to start…</div>`;
-    }
+    const disabled =
+      this.vm.thisPlayerIsReady.value ||
+      this.vm.markingReady.value ||
+      this.connectivityService?.wsServerOk?.value === false;
     
     return html`
       <section>
         <h3>Ready to Start</h3>
-        <p class="hint">
-          The game will start automatically when both players are ready.
-        </p>
-          ${!me
-            ? html`<p>Loading player…</p>`
-            : html`<p>You: ${me.name}</p>`}
+        <p>The game will start automatically when both players are ready.</p>
 
-        ${!opponent
-          ? html`
-              <p class="muted">Loading opponent…</p>
-            `
-          : html`
-              <p>Opponent: ${opponent.name}</p>
-            `}
-          <p>All players ready? ${this.session.allPlayersReady.value ? '✅' : '⏳'}</p>
+        <div>
+          <p>You: ${me.name} ${me.isReadyToStart ? '✅ Ready' : '⏳'}</p>
+          <p>Opponent: ${opponent.name} ${opponent.isReadyToStart ? '✅' : '⏳'}</p>
+            <ul>
+              ${this.vm.playersList.value.map(p => html`
+                <li>
+                  ${p.name}
+                  ${p.isReadyToStart ? '✅ Ready' : '⏳ Waiting'}
+                </li>
+              `)}
+            </ul>
           <p>Starting player: ${this.vm.activePlayerName.value}</p>
-        <div class="actions">
+        </div>
+
           <button
             @click=${() => this.vm.markReady()}
-            ?disabled=${this.vm.thisPlayerIsReady.value}
+            ?disabled=${disabled}
           >
-            Ready
+            ${this.vm.thisPlayerIsReady.value
+              ? 'Waiting for opponent…'
+              : this.vm.markingReady.value
+                ? 'Setting ready…'
+                : 'Ready'}
           </button>
-          <button
-            class="btn btn-secondary"
-            @click=${() => this.vm.leaveGame()}
-            disabled=${this.vm.leavingGame.value}
-          >
+        <button
+          class="btn btn-secondary"
+          @click=${() => this.vm.leaveGame()}
+          ?disabled=${this.vm.leavingGame.value}>
           Leave Game
-          </button>
-        </div>
+        </button>
       </section>
     `;
   }
 }
-
 customElements.define('feature-ready-to-start-view', FeatureReadyToStartView);

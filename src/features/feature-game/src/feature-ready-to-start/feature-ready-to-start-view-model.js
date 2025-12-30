@@ -1,57 +1,46 @@
 import { computed, effect, signal } from '@preact/signals';
 import { GameStatus } from "@letter-limbo/common";
 import { navigateTo } from "../../../../app-shell/routing/current-route.js";
-import { FeatureQuickGameService } from '../../../feature-quick-game/src/FeatureQuickGameService.js';
+import { FeatureGameService } from '../FeatureGameService.js';
 
 export class FeatureReadyToStartViewModel {
-  constructor(session, wsService) {
-    this.session = session;
+  constructor(sharedGameSession, wsService, connectivityService) {
+    this.sharedGameSession = sharedGameSession;
     this.wsService = wsService;
-    this.service = new FeatureQuickGameService();
+    this.connectivityService = connectivityService;
+    this.service = new FeatureGameService();
     
-    this.gameUuid = computed(() => this.session.gameUuid.value);
-    this.gameStatus = computed(() => this.session.gameStatus.value);
-    this.language = computed(() => this.session.language.value);
-    this.maxPlayers = computed(() => session.maxPlayers.value);
-    this.private = computed(() => this.session.private.value);
+    // Core
+    this.gameUuid = computed(() => this.sharedGameSession.gameUuid.value);
+    this.gameStatus = computed(() => this.sharedGameSession.gameStatus.value);
+    this.language = computed(() => this.sharedGameSession.language.value);
+    this.maxPlayers = computed(() => this.sharedGameSession.maxPlayers.value);
+    this.private = computed(() => this.sharedGameSession.private.value);
     
     // Players
-    this.playersList = computed(() => this.session.playersList.value);
-
+    this.playersList = computed(() => this.sharedGameSession.playersList.value);
     
     // Viewer-based
-    this.playerUuid = computed(() => this.session.playerUuid.value);
-    this.playerName = computed(() => this.session.playerName.value);
-    this.thisPlayerIsReady = computed(() => this.session.thisPlayerIsReady.value);
+    this.playerUuid = computed(() => this.sharedGameSession.playerUuid.value);
+    this.playerName = computed(() => this.sharedGameSession.playerName.value);
     
-    // Computed
-    this.me = computed(() => {
-      const meFromList = session.playersList.value.find(p => p.uuid === this.session.playerUuid.value);
-      if (meFromList) return meFromList;
-      if (this.session.playerUuid.value && this.session.playerName.value) {
-        return {
-          uuid: this.session.playerUuid.value,
-          name: this.session.playerName.value,
-          readyToStart: this.session.thisPlayerIsReady.value
-        };
-      }
-      return null;
-    });
+    this.thisPlayerIsReady = computed(() => this.sharedGameSession.me.value?.readyToStart ?? false);
+    this.allPlayersReady = computed(() => this.sharedGameSession.allPlayersReady.value);
     
-    this.opponent = computed(() => {
-      console.debug('[feature-ready-to-start-view-model] this.session.playersList: ', this.session.playersList.value);
-      return this.session.playersList.value.find(p => p.uuid !== this.session.playerUuid.value) ?? null;
-    });
+    this.me = this.sharedGameSession.me;
+    console.debug('[feature-waiting-for-players-view-model] this.me: ', this.me);
     
-    this.activePlayerUuid = computed(() => this.session.activePlayerUuid.value);
-    this.activePlayerName = computed(() => {
-      const active = this.session.activePlayer.value;
-      if (!active) return null;
-      return active.name;
-    });
+    this.opponent = this.sharedGameSession.opponent;
+    console.debug('[feature-waiting-for-players-view-model] this.opponent: ', this.opponent);
+    
+    this.activePlayerUuid = computed(() => this.sharedGameSession.activePlayerUuid.value);
+    this.activePlayerName = computed(() => this.sharedGameSession.activePlayerName.value);
+    
+    this.markingReady = signal(false);
+    this.leavingGame = signal(false);
     
     this._navEffect = effect(() => {
-      if (this.session.gameStatus.value === GameStatus.PLAYING) {
+      if (this.sharedGameSession.gameStatus.value === GameStatus.PLAYING) {
         navigateTo(`/games/${this.gameUuid.value}/playing`);
       }
     });
@@ -61,37 +50,44 @@ export class FeatureReadyToStartViewModel {
     this._navEffect();
   }
   
-  updateActivePlayer(uuid, name) {
-    const active = this.playersList.value.find(p => p.uuid === uuid);
-    this.activePlayerUuid.value = active?.uuid ?? uuid;
-    this.activePlayerName.value = active?.name ?? name;
+  async markReady() {
+    if (this.markingReady.value || this.thisPlayerIsReady.value) return;
+    if (this.thisPlayerIsReady.value) return;
+    
+    this.markingReady.value = true;
+    
+    const me = this.sharedGameSession.me.value;
+    if (me) me.isReadyToStart = true;
+    
+    console.debug('[feature-ready-to-start-view-model] this.session.gameUuid.value: ', this.sharedGameSession.gameUuid.value);
+    console.debug('[feature-ready-to-start-view-model] this.session.playerUuid.value: ', this.sharedGameSession.playerUuid.value);
+    
+    try {
+      await this.service.markPlayerReady(this.sharedGameSession.gameUuid.value, this.sharedGameSession.playerUuid.value);
+      
+    } catch (err) {
+      console.error('[ready-to-start] Failed to mark ready', err);
+      // Only reset markingReady if the request failed
+      if (me) me.isReadyToStart = false;
+      this.markingReady.value = false;
+    }
   }
   
   leavingGame = signal(false);
-  
   async leaveGame() {
     if (this.leavingGame.value) return;
     
     this.leavingGame.value = true;
     
     try {
-      await this.service.cancelQuickGame(
-        this.session.gameUuid.value,
-        this.session.playerUuid.value
+      await this.service.cancelGame(
+        this.sharedGameSession.gameUuid.value,
+        this.sharedGameSession.playerUuid.value
       );
     } catch (err) {
       console.error('Failed to cancel game', err);
     } finally {
       this.leavingGame.value = false;
-    }
-  }
-  
-  markReady() {
-    if (!this.session.activePlayer.value.readyToStart) {
-      this.session.wsService.send({
-        type: 'MARK_READY',
-        playerUuid: this.session.playerUuid.value
-      });
     }
   }
 }
