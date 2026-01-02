@@ -2,6 +2,7 @@ import { html, LitElement } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { FeatureWaitingForPlayersViewModel } from './feature-waiting-for-players-view-model.js';
 import { FeatureWaitingForPlayersViewStyles } from './feature-waiting-for-players-view.styles.js';
+import { effect } from "@preact/signals";
 
 export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement) {
   static properties = {
@@ -13,16 +14,44 @@ export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement
   static styles = [ FeatureWaitingForPlayersViewStyles ];
   
   disconnectedCallback() {
+    this._signalEffect?.();
     this.vm?.dispose?.();
     super.disconnectedCallback();
   }
   
   createRenderRoot() { return this; } // Render in light DOM
   
-  updated(changedProps) {
+  // updated(changedProps) {
+  //   if (!this.vm && this.sharedGameSession && this.wsService) {
+  //     this.vm = new FeatureWaitingForPlayersViewModel(this.sharedGameSession, this.wsService, this.connectivityService);
+  //     this.requestUpdate();
+  //   }
+  // }
+  
+  firstUpdated() {
     if (!this.vm && this.sharedGameSession && this.wsService) {
-      this.vm = new FeatureWaitingForPlayersViewModel(this.sharedGameSession, this.wsService, this.connectivityService);
-      this.requestUpdate();
+      // Assign VM first
+      this.vm = new FeatureWaitingForPlayersViewModel(
+        this.sharedGameSession,
+        this.wsService,
+        this.connectivityService
+      );
+      
+      // Defer effect setup to next microtask
+      Promise.resolve().then(() => {
+        this._signalEffect = effect(() => {
+          if (!this.vm) return;
+          
+          // Read signals to subscribe
+          this.vm.playersList.value;
+          this.vm.me.value;
+          this.vm.markingReady?.value;
+          this.vm.cancelling?.value;
+          
+          // Request re-render, but Lit will now consider it a new cycle
+          this.requestUpdate();
+        });
+      });
     }
   }
   

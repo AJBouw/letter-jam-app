@@ -19,7 +19,28 @@ export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
   
   createRenderRoot() { return this; } // Render in light DOM
   
-  updated(changedProps) {
+  // updated(changedProps) {
+  //   if (!this.vm && this.sharedGameSession && this.wsService) {
+  //     this.vm = new FeatureReadyToStartViewModel(
+  //       this.sharedGameSession,
+  //       this.wsService,
+  //       this.connectivityService
+  //     );
+  //
+  //     // Create effect ONCE
+  //     this._signalEffect = effect(() => {
+  //       this.vm.playersList.value;
+  //       this.vm.thisPlayerIsReady.value;
+  //       this.vm.markingReady.value;
+  //       this.vm.activePlayerName.value;
+  //       this.vm.leavingGame.value;
+  //
+  //       // Trigger Lit re-render
+  //       this.requestUpdate();
+  //     });
+  //   }
+  // }
+  firstUpdated() {
     if (!this.vm && this.sharedGameSession && this.wsService) {
       this.vm = new FeatureReadyToStartViewModel(
         this.sharedGameSession,
@@ -27,16 +48,19 @@ export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
         this.connectivityService
       );
       
-      // Create effect ONCE
-      this._signalEffect = effect(() => {
-        this.vm.playersList.value;
-        this.vm.thisPlayerIsReady.value;
-        this.vm.markingReady.value;
-        this.vm.activePlayerName.value;
-        this.vm.leavingGame.value;
-        
-        // Trigger Lit re-render
-        this.requestUpdate();
+      // Defer effect setup to next microtask
+      Promise.resolve().then(() => {
+        this._signalEffect = effect(() => {
+          if (!this.vm) return;
+          
+          // Access signals to subscribe for reactivity
+          this.vm.playersList.value;
+          this.vm.thisPlayerIsReady.value;
+          this.vm.markingReady.value;
+          
+          // Request Lit re-render in a safe async cycle
+          this.requestUpdate();
+        });
       });
     }
   }
@@ -47,11 +71,11 @@ export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
       return html`<div>Loading…</div>`;
     }
     
-    const me = this.vm.me.value;
-    const opponent = this.vm.opponent.value;
+    const me = this.vm?.me.value;
+    const opponent = this.vm?.opponent.value;
     const disabled =
-      this.vm.thisPlayerIsReady.value ||
-      this.vm.markingReady.value ||
+      this.vm?.thisPlayerIsReady.value ||
+      this.vm?.markingReady.value ||
       this.connectivityService?.wsServerOk?.value === false;
     
     return html`
