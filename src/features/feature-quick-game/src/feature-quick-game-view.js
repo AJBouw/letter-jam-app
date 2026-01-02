@@ -1,13 +1,12 @@
 import { html, LitElement } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
-import { navigateTo } from '../../../app-shell/routing/current-route.js';
 import { FeatureQuickGameViewModel } from './feature-quick-game-view-model.js';
 import { FeatureQuickGameViewStyles } from './feature-quick-game-view.styles.js';
 import { SignalController } from '@letter-limbo/common';
+import { FeatureGameRootView } from '../../feature-game/src/feature-game-root-view.js';
 import { FeatureWaitingForPlayersView } from './../../feature-game/src/feature-waiting-for-players/feature-waiting-for-players-view.js';
 import { FeatureReadyToStartView } from './../../feature-game/src/feature-ready-to-start/feature-ready-to-start-view.js';
 import { FeaturePlayingView } from './../../feature-game/src/feature-playing/feature-playing-view.js';
-import { effect } from "@preact/signals";
 
 export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
   static properties = {
@@ -19,6 +18,7 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
   }
   
   static scopedElements = {
+    'feature-game-root-view': FeatureGameRootView,
     'feature-waiting-for-players-view': FeatureWaitingForPlayersView,
     'feature-ready-to-start-view': FeatureReadyToStartView,
     'feature-playing-view': FeaturePlayingView
@@ -34,12 +34,10 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
       return;
     }
     
-    // Initialize VM with the shared session and imported wsService
     this.vm = new FeatureQuickGameViewModel(this.sharedGameSession, this.wsService, this.connectivityService);
     
     this.signals = new SignalController(this, [
       this.vm.loading,
-      this.vm.screen,
       this.vm.canSubmit,
       this.vm.name,
       this.vm.email,
@@ -58,22 +56,12 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
     ]);
     
     this.vm.start();
-    
-    // Reactive navigation
-    effect(() => {
-      if (this.vm.nextRoute.value) {
-        navigateTo(this.vm.nextRoute.value);
-        this.vm.nextRoute.value = null;
-      }
-    });
   }
   
   disconnectedCallback() {
     super.disconnectedCallback();
     this.vm.stop();
   }
-  
-  // createRenderRoot() { return this; } // Render in light DOM
   
   _renderForm() {
     console.debug('[feature-quick-game-view] this.vm: ', this.vm);
@@ -111,50 +99,8 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
     `;
   }
   
-  _renderNested() {
-    if (!this.vm || !this.vm.sharedGameSession || !this.vm.sharedGameSession.playersList.value) {
-      return html`<div class="loading-spinner">Loading…</div>`;
-    }
-    
-    console.debug('[feature-quick-game-view] screen: ', this.vm.screen.value);
-    
-    switch (this.vm.screen.value) {
-      case 'FORM': return this._renderForm();
-      case 'WAITING':
-        console.debug('[feature-quick-game-view] screen: feature-waiting-for-players-view')
-        return html`
-          <feature-waiting-for-players-view
-            .session=${this.vm.sharedGameSession}
-            .wsService=${this.wsService}
-          ></feature-waiting-for-players-view>
-        `;
-      case 'READY':
-        console.debug('[feature-quick-game-view] screen: feature-ready-to-start-view')
-        return html`
-          <feature-ready-to-start-view
-            .session=${this.vm.sharedGameSession}
-          ></feature-ready-to-start-view>
-        `;
-      case 'PLAYING':
-        console.debug('[feature-quick-game-view] screen: feature-playing-view')
-        return html`
-          <feature-playing-view
-            .session=${this.vm.sharedGameSession}
-          ></feature-playing-view>
-        `;
-      case 'FINISHED':
-        console.debug('[feature-quick-game-view] screen: Finished')
-        return html`
-          <h2>Game Finished</h2>
-        `;
-      default:
-        console.debug('[feature-quick-game-view] screen: default')
-        return this._renderForm();
-    }
-  }
-  
   render() {
-    return html`${this._renderNested()}`;
+    return html`${this._renderForm()}`;
   }
 }
 

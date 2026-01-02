@@ -1,6 +1,7 @@
 import { signal, computed, effect } from '@preact/signals'
 import { emailValidatorSignal, GameStatus, nameValidatorSignal } from '@letter-limbo/common';
 import { FeatureQuickGameService } from './FeatureQuickGameService.js';
+import { navigateTo } from "../../../app-shell/routing/current-route.js";
 
 /**
  * Observe GameSession
@@ -28,46 +29,6 @@ export class FeatureQuickGameViewModel {
     
     // UI state
     this.loading = signal(true);
-    this.screen = signal('FORM');
-    
-    // this.backendOk = this.connectivityService.backendOk;
-    // this.wsServerOk = this.connectivityService.wsServerOk;
-    
-    // Derived screen
-    this.screen = computed(() => {
-      if (!this.sharedGameSession.gameUuid.value) return 'FORM';
-      switch (this.sharedGameSession.gameStatus.value) {
-        case GameStatus.WAITING_FOR_PLAYERS:
-          return 'WAITING';
-        case GameStatus.READY_TO_START:
-          return 'READY';
-        case GameStatus.PLAYING:
-          return 'PLAYING';
-        case GameStatus.FINISHED:
-          return 'FINISHED';
-        default:
-          return 'FORM';
-      }
-    });
-    
-    // Navigation
-    this.nextRoute = signal(null);
-    effect(() => {
-      switch (this.screen.value) {
-        case 'WAITING':
-          console.debug('[feature-quick-game-view-model] screen waiting');
-          this.nextRoute.value = `/games/${this.sharedGameSession.gameUuid.value}/waiting`;
-          break;
-        case 'READY':
-          console.debug('[feature-quick-game-view-model] screen ready');
-          this.nextRoute.value = `/games/${this.sharedGameSession.gameUuid.value}/ready-to-start`;
-          break;
-        case 'PLAYING':
-          console.debug('[feature-quick-game-view-model] screen playing');
-          this.nextRoute.value = `/games/${this.sharedGameSession.gameUuid.value}/playing`;
-          break;
-      }
-    });
     
     this.canSubmit = computed(() =>
       this.nameTouched.value &&
@@ -77,7 +38,7 @@ export class FeatureQuickGameViewModel {
       this.connectivityService.backendOk.value &&
       this.connectivityService.wsServerOk.value &&
       !this.loading.value
-      
+    
     );
     
     // Auto-reset loading once backend + WS are up
@@ -92,7 +53,7 @@ export class FeatureQuickGameViewModel {
       
       const canSubmit = nameTouched && emailTouched && nameValid && emailValid && backendOk && wsOk && !loading;
       
-      console.log('[canSubmit debug]', {
+      console.log('[feature-quick-game-view-model] canSubmit debug', {
         nameTouched,
         emailTouched,
         nameValid,
@@ -141,6 +102,8 @@ export class FeatureQuickGameViewModel {
       
       const gameData = response.data;
       
+      console.debug('[FeatureQuickGameView] response.data:', JSON.stringify(gameData, null, 2));
+      
       // Apply full backend snapshot after viewer is set
       this.sharedGameSession.applyBackendSnapshot(gameData);
       
@@ -157,6 +120,8 @@ export class FeatureQuickGameViewModel {
         );
       }
       
+      navigateTo(`/games/${response.data.gameUuid}`);
+      
       // Reset form
       this.name.value = '';
       this.email.value = '';
@@ -164,7 +129,7 @@ export class FeatureQuickGameViewModel {
       this.nameTouched.value = false;
       this.emailTouched.value = false;
     } catch (err) {
-      console.error('[QuickGame] Failed to start', err);
+      console.error('[feature-quick-game-view-model] Failed to start', err);
     } finally {
       this.loading.value = false;
     }

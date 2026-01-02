@@ -13,7 +13,7 @@ export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
   static styles = [ ];
   
   disconnectedCallback() {
-    this.vm?.dispose();
+    this._signalEffect?.()
     super.disconnectedCallback();
   }
   
@@ -29,10 +29,12 @@ export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
       
       // Create effect ONCE
       this._signalEffect = effect(() => {
-        this.vm.thisPlayerIsReady.value;
-        this.vm.opponent?.value?.readyToStart;
-        this.vm.markingReady.value;
         this.vm.playersList.value;
+        this.vm.thisPlayerIsReady.value;
+        this.vm.markingReady.value;
+        this.vm.activePlayerName.value;
+        this.vm.leavingGame.value;
+        
         // Trigger Lit re-render
         this.requestUpdate();
       });
@@ -40,7 +42,10 @@ export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
   }
   
   render() {
-    if (!this.vm) return html`<div>Loading…</div>`;
+    if (!this.vm || !this.vm.playersList.value.length) {
+      console.debug('[feature-ready-to-start-view] No vm or player list');
+      return html`<div>Loading…</div>`;
+    }
     
     const me = this.vm.me.value;
     const opponent = this.vm.opponent.value;

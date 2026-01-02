@@ -37,5 +37,6 @@ export class ConnectivityService {
     this.wsService.disconnectAll();
   }
 }
-// Singleton
+
+// Singleton instance
 export const connectivityService = new ConnectivityService();

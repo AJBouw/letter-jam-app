@@ -1,13 +1,13 @@
 import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
-import { backendService, GameSession, SignalController, webSocketService } from '@letter-limbo/common';
+import { backendService, GameSession, SignalController, wsService } from '@letter-limbo/common';
 import { LandingPageViewModel } from './landing-page-view-model.js';
 import { LandingPageViewStyles } from './landing-page-view.styles.js';
 
 export class LandingPageView extends ScopedElementsMixin(LitElement) {
   constructor() {
     super();
-    this.vm = new LandingPageViewModel(backendService, GameSession, webSocketService);
+    this.vm = new LandingPageViewModel(backendService, GameSession, wsService);
     this._signals = null;
   }
   
@@ -19,8 +19,8 @@ export class LandingPageView extends ScopedElementsMixin(LitElement) {
       this.vm.welcomeMessage,
       this.vm.loading,
       this.vm.canSubmit,
-      this.vm.connectivity.backendOk,
-      this.vm.connectivity.wsOk
+      this.vm.connectivityService.backendOk,
+      this.vm.connectivityService.wsServerOk
     ]);
     this.vm.start();
   }
@@ -36,11 +36,11 @@ export class LandingPageView extends ScopedElementsMixin(LitElement) {
     return html`
       <section class="high-lights">
         <h3>High Lights</h3>
-        <div class="status-badge ${this.vm.connectivity.backendOk.value ? 'ok' : 'error'}">
-          Backend: ${this.vm.connectivity.backendOk.value ? '✅ OK' : `❌ ${this.vm.connectivity.backendError.value || 'Down'}`}
+        <div class="status-badge ${this.vm.connectivityService.backendOk.value ? 'ok' : 'error'}">
+            Backend: ${this.vm.connectivityService.backendOk.value ? '✅ OK' : '❌ Down'}
         </div>
-        <div class="status-badge ${this.vm.connectivity.wsOk.value ? 'ok' : 'error'}">
-          WS: ${this.vm.connectivity.wsOk.value ? '✅ Connected' : '❌ Disconnected'}
+        <div class="status-badge ${this.vm.connectivityService.wsServerOk.value ? 'ok' : 'error'}">
+            WS Server: ${this.vm.connectivityService.wsServerOk.value ? '✅ Connected' : '❌ Disconnected'}
         </div>
       </section>
 

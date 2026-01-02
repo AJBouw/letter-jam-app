@@ -7,6 +7,7 @@ import { FeatureLoginView } from '../../features/feature-login/src/feature-login
 import { LandingPageView } from '../components/landing-page/landing-page-view.js';
 import { WsTestView } from '../components/ws-test-view.js';
 import { WsSendTestView } from '../components/ws-send-test-view.js';
+import { connectivityService, sharedGameSession, wsService } from '@letter-limbo/common';
 
 export class RouterOutlet extends ScopedElementsMixin(LitElement) {
   constructor() {
@@ -33,27 +34,30 @@ export class RouterOutlet extends ScopedElementsMixin(LitElement) {
   
   _renderRoute() {
     console.log('[RouterOutlet] Rendering route for path:', this.currentRoute);
-    const path = this.currentRoute.split('?')[0]; // strip query
+    const path = this.currentRoute.split('?')[0]; // Strip query
     
-    // Quick Start
-    if (path === '/games/quick-start') return html`<feature-quick-game-view></feature-quick-game-view>`;
-    
-    // Waiting-for-Players dynamic route: /games/:uuid/waiting-for-players
-    const waitingMatch = path.match(/^\/games\/([0-9a-fA-F-]{36})\/waiting-for-players$/);
-    if (waitingMatch) {
-      const uuid = waitingMatch[1];
-      return html`<feature-waiting-for-players-view .uuid="${uuid}"></feature-waiting-for-players-view>`;
-    }
-    
+    // Full game root
     const gameMatch = path.match(/^\/games\/([0-9a-fA-F-]{36})(\/.*)?$/);
     if (gameMatch) {
       return html`
         <feature-game-root-view
           .gameUuid=${gameMatch[1]}
           .subRoute=${gameMatch[2] ?? ''}
+          .sharedGameSession=${sharedGameSession}
+          .wsService=${wsService}
+          .connectivityService=${connectivityService}
         ></feature-game-root-view>
       `;
     }
+    
+    // Quick Start
+    if (path === '/games/quick-start') return html`
+      <feature-quick-game-view
+        .sharedGameSession=${sharedGameSession}
+        .wsService=${wsService}
+        .connectivityService=${connectivityService}
+      ></feature-quick-game-view>
+    `;
     
     // Fallback / static routes
     switch (path) {

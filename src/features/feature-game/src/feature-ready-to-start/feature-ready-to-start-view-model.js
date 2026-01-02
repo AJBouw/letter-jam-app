@@ -1,6 +1,4 @@
 import { computed, effect, signal } from '@preact/signals';
-import { GameStatus } from "@letter-limbo/common";
-import { navigateTo } from "../../../../app-shell/routing/current-route.js";
 import { FeatureGameService } from '../FeatureGameService.js';
 
 export class FeatureReadyToStartViewModel {
@@ -24,7 +22,7 @@ export class FeatureReadyToStartViewModel {
     this.playerUuid = computed(() => this.sharedGameSession.playerUuid.value);
     this.playerName = computed(() => this.sharedGameSession.playerName.value);
     
-    this.thisPlayerIsReady = computed(() => this.sharedGameSession.me.value?.readyToStart ?? false);
+    this.thisPlayerIsReady = computed(() => this.sharedGameSession.me.value?.isReadyToStart ?? false);
     this.allPlayersReady = computed(() => this.sharedGameSession.allPlayersReady.value);
     
     this.me = this.sharedGameSession.me;
@@ -38,16 +36,6 @@ export class FeatureReadyToStartViewModel {
     
     this.markingReady = signal(false);
     this.leavingGame = signal(false);
-    
-    this._navEffect = effect(() => {
-      if (this.sharedGameSession.gameStatus.value === GameStatus.PLAYING) {
-        navigateTo(`/games/${this.gameUuid.value}/playing`);
-      }
-    });
-  }
-  
-  dispose() {
-    this._navEffect();
   }
   
   async markReady() {

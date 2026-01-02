@@ -57,7 +57,7 @@ export class GameSession {
     );
     this.allPlayersReady = computed(() =>
       this.playersList.value.length > 0 &&
-      this.playersList.value.every(p => p.readyToStart)
+      this.playersList.value.every(p => p.isReadyToStart)
     );
     this.activePlayer = computed(() =>
       this.playersList.value.find(p => p.uuid === this.activePlayerUuid.value) ?? null
@@ -87,9 +87,26 @@ export class GameSession {
     if (!existing) {
       this.playersList.value = [
         ...this.playersList.value,
-        { uuid: playerUuid, name: playerName, ready: false }
+        { uuid: playerUuid, name: playerName, isReadyToStart: false }
       ];
     }
+  }
+  
+  restoreViewerFromSession() {
+    if (this.playerUuid.value) return;
+    
+    const storedUuid = sessionStorage.getItem('playerUuid');
+    const storedName = sessionStorage.getItem('playerName');
+    
+    if (!storedUuid || !storedName) return;
+    
+    this.playerUuid.value = storedUuid;
+    this.playerName.value = storedName;
+    
+    console.debug('[GameSession] Viewer restored from sessionStorage', {
+      playerUuid: storedUuid,
+      playerName: storedName
+    });
   }
   
   applyBackendSnapshot(data) {
@@ -110,20 +127,16 @@ export class GameSession {
       });
     }
     
-    // if (data.playersList) {
-    //   this.playersList.value = data.playersList;
-    // }
-    
     if (data.playersList) {
       this.playersList.value = data.playersList.map(p => {
         const local = this.playersList.value.find(lp => lp.uuid === p.uuid);
-        
-        // Preserve local optimistic ready state
-        const ready = local?.isReadyToStart ?? p.isReadyToStart ?? false;
+        const isMe = p.uuid === this.playerUuid.value;
         
         return {
           ...p,
-          isReadyToStart: ready
+          isReadyToStart: isMe
+            ? local?.isReadyToStart ?? p.isReadyToStart ?? false // Preserve optimistic for 'me'
+            : p.isReadyToStart ?? false // Backend is source of truth for opponent
         };
       });
     }
@@ -161,10 +174,13 @@ export class GameSession {
       
       if (data.type === 'GAME_UPDATE') {
         this.applyBackendSnapshot(data);
+        console.log('[WS] Payload pretty:', JSON.stringify(data, null, 2));
       }
     } catch (err) {
       console.error('[GameSession] handleMessage failed', err, msg);
     }
   }
 }
+
+// Singleton instance
 export const sharedGameSession = new GameSession();
