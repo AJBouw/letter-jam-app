@@ -21,7 +21,7 @@ export class GameSession {
     this.playerName = signal(null);
     
     // Players
-    this.playersList = signal([]);
+    this.players = signal([]);
     
     // Round / gameplay
     this.roundUuid = signal(null);
@@ -30,16 +30,17 @@ export class GameSession {
     this.maxTurns = signal(null);
     this.targetWordUuid = signal(null);
     this.maskedWord = signal(null);
-    this.turnsList = signal([]);
+    this.guesses = signal([]);
     this.activePlayerUuid = signal(null);
     this.winningPlayerUuid = signal(null);
+    this.blocks = computed(() => this.maskedWord.value.split(''));
     
     // Computed / derived
     this.me = computed(() =>
-      this.playersList.value.find(p => p.uuid === this.playerUuid.value) ?? null
+      this.players.value.find(p => p.uuid === this.playerUuid.value) ?? null
     );
     this.opponents = computed(() =>
-      this.playersList.value.filter(p => p.uuid !== this.playerUuid.value)
+      this.players.value.filter(p => p.uuid !== this.playerUuid.value)
     );
     
     this.opponent = computed(() => {
@@ -47,20 +48,19 @@ export class GameSession {
       if (!me) return null;
       
       return (
-        this.playersList.value.find(p => p.uuid !== me.uuid) ?? null
+        this.players.value.find(p => p.uuid !== me.uuid) ?? null
       );
     });
     
-    // this.thisPlayerIsReady = computed(() => this.me.value?.readyToStart ?? false);
     this.thisPlayerIsReady = computed(() =>
-      this.playersList.value.find(p => p.uuid === this.playerUuid.value)?.isReadyToStart ?? false
+      this.players.value.find(p => p.uuid === this.playerUuid.value)?.readyToStart ?? false
     );
     this.allPlayersReady = computed(() =>
-      this.playersList.value.length > 0 &&
-      this.playersList.value.every(p => p.isReadyToStart)
+      this.players.value.length > 0 &&
+      this.players.value.every(p => p.readyToStart)
     );
     this.activePlayer = computed(() =>
-      this.playersList.value.find(p => p.uuid === this.activePlayerUuid.value) ?? null
+      this.players.value.find(p => p.uuid === this.activePlayerUuid.value) ?? null
     );
     this.activePlayerName = computed(() => {
       const active = this.activePlayer.value;
@@ -80,14 +80,14 @@ export class GameSession {
     sessionStorage.setItem('playerUuid', playerUuid);
     sessionStorage.setItem('playerName', playerName);
     
-    console.debug('[GameSession] Viewer initialized', { playerUuid, playerName });
+    console.debug('[game-session] Viewer initialized', { playerUuid, playerName });
     
-    // Add "me" to playersList if not already present
-    const existing = this.playersList.value.find(p => p.uuid === playerUuid);
+    // Add "me" to players if not already present
+    const existing = this.players.value.find(p => p.uuid === playerUuid);
     if (!existing) {
-      this.playersList.value = [
-        ...this.playersList.value,
-        { uuid: playerUuid, name: playerName, isReadyToStart: false }
+      this.players.value = [
+        ...this.players.value,
+        { uuid: playerUuid, name: playerName, readyToStart: false }
       ];
     }
   }
@@ -103,10 +103,19 @@ export class GameSession {
     this.playerUuid.value = storedUuid;
     this.playerName.value = storedName;
     
-    console.debug('[GameSession] Viewer restored from sessionStorage', {
+    console.debug('[game-session] Viewer restored from sessionStorage', {
       playerUuid: storedUuid,
       playerName: storedName
     });
+    
+    // Add 'me' to players if not present
+    const existing = this.players.value.find(p => p.uuid === storedUuid);
+    if (!existing) {
+      this.players.value = [
+        ...this.players.value,
+        { uuid: storedUuid, name: storedName, readyToStart: false }
+      ];
+    }
   }
   
   applyBackendSnapshot(data) {
@@ -127,57 +136,56 @@ export class GameSession {
       });
     }
     
-    if (data.playersList) {
-      this.playersList.value = data.playersList.map(p => {
-        const local = this.playersList.value.find(lp => lp.uuid === p.uuid);
+    if (Array.isArray(data.players)) {
+      this.players.value = data.players.map(p => {
         const isMe = p.uuid === this.playerUuid.value;
+        const local = this.players.value.find(lp => lp.uuid === p.uuid);
         
         return {
           ...p,
-          isReadyToStart: isMe
-            ? local?.isReadyToStart ?? p.isReadyToStart ?? false // Preserve optimistic for 'me'
-            : p.isReadyToStart ?? false // Backend is source of truth for opponent
+          readyToStart: isMe
+            ? local?.readyToStart ?? p.readyToStart ?? false // preserve optimistic ready
+            : p.readyToStart ?? false                         // backend is source of truth
         };
       });
     }
     
-    if (data.activePlayerUuid) this.activePlayerUuid.value = data.activePlayerUuid;
-    
     // Round details
-    if (data.roundDetails) {
-      const r = data.roundDetails;
-      this.roundUuid.value = r.uuid;
-      this.roundNumber.value = r.roundNumber;
-      this.roundStatus.value = r.roundStatus;
-      this.activePlayerUuid.value = r.activePlayerUuid;
-      this.winningPlayerUuid.value = r.winningPlayerUuid;
-      this.maxTurns.value = r.maxTurns;
-      this.targetWordUuid.value = r.targetWordUuid;
-      this.maskedWord.value = r.maskedWord;
-      this.turnsList.value = r.turnsList;
+    const roundDetails = data.roundDetails;
+    if (roundDetails) {
+      this.roundUuid.value = roundDetails.uuid;
+      this.roundNumber.value = roundDetails.roundNumber;
+      this.roundStatus.value = roundDetails.roundStatus;
+      this.activePlayerUuid.value = roundDetails.activePlayerUuid;
+      this.winningPlayerUuid.value = roundDetails.winningPlayerUuid;
+      this.maxTurns.value = roundDetails.maxTurns;
+      this.targetWordUuid.value = roundDetails.targetWordUuid;
+      this.maskedWord.value = roundDetails.maskedWord;
+      this.guesses.value = roundDetails.guesses;
     }
     
-    console.debug('[GameSession] Snapshot applied', {
+    console.debug('[game-session] Snapshot applied', {
       gameStatus: this.gameStatus.value,
-      players: this.playersList.value,
-      activePlayer: this.activePlayerUuid.value
+      players: this.players.value,
+      roundDetails: data.roundDetails
     });
   }
   
   handleMessage(msg) {
+    console.debug('[game-session] msg: ', msg);
     try {
       let payload = msg;
       if (typeof msg === 'string') payload = JSON.parse(msg);
       else if (msg.body && typeof msg.body === 'string') payload = JSON.parse(msg.body);
       
-      const data = payload.data ?? payload;
-      
-      if (data.type === 'GAME_UPDATE') {
-        this.applyBackendSnapshot(data);
-        console.log('[WS] Payload pretty:', JSON.stringify(data, null, 2));
+      // payload = { type: 'GAME_UPDATE', data: {...snapshot...} }
+      if (payload.type === 'GAME_UPDATE') {
+        console.debug('[game-session] apply backend snapshot');
+        this.applyBackendSnapshot(payload.data); // <-- payload.data is your snapshot
+        console.log('[game-session] Payload pretty:', JSON.stringify(payload.data, null, 2));
       }
     } catch (err) {
-      console.error('[GameSession] handleMessage failed', err, msg);
+      console.error('[game-session] handleMessage failed', err, msg);
     }
   }
 }

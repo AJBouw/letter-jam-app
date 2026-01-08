@@ -1,7 +1,7 @@
 import { html, LitElement } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
+import { effect } from '@preact/signals';
 import { FeatureReadyToStartViewModel } from './feature-ready-to-start-view-model.js';
-import { effect } from "@preact/signals";
 
 export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
   static properties = {
@@ -17,29 +17,6 @@ export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
     super.disconnectedCallback();
   }
   
-  createRenderRoot() { return this; } // Render in light DOM
-  
-  // updated(changedProps) {
-  //   if (!this.vm && this.sharedGameSession && this.wsService) {
-  //     this.vm = new FeatureReadyToStartViewModel(
-  //       this.sharedGameSession,
-  //       this.wsService,
-  //       this.connectivityService
-  //     );
-  //
-  //     // Create effect ONCE
-  //     this._signalEffect = effect(() => {
-  //       this.vm.playersList.value;
-  //       this.vm.thisPlayerIsReady.value;
-  //       this.vm.markingReady.value;
-  //       this.vm.activePlayerName.value;
-  //       this.vm.leavingGame.value;
-  //
-  //       // Trigger Lit re-render
-  //       this.requestUpdate();
-  //     });
-  //   }
-  // }
   firstUpdated() {
     if (!this.vm && this.sharedGameSession && this.wsService) {
       this.vm = new FeatureReadyToStartViewModel(
@@ -54,7 +31,7 @@ export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
           if (!this.vm) return;
           
           // Access signals to subscribe for reactivity
-          this.vm.playersList.value;
+          this.vm.players.value;
           this.vm.thisPlayerIsReady.value;
           this.vm.markingReady.value;
           
@@ -66,7 +43,7 @@ export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
   }
   
   render() {
-    if (!this.vm || !this.vm.playersList.value.length) {
+    if (!this.vm || !this.vm.players.value.length) {
       console.debug('[feature-ready-to-start-view] No vm or player list');
       return html`<div>Loading…</div>`;
     }
@@ -84,13 +61,13 @@ export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
         <p>The game will start automatically when both players are ready.</p>
 
         <div>
-          <p>You: ${me.name} ${me.isReadyToStart ? '✅ Ready' : '⏳'}</p>
-          <p>Opponent: ${opponent.name} ${opponent.isReadyToStart ? '✅' : '⏳'}</p>
+          <p>You: ${me.name} ${me.readyToStart ? '✅ Ready' : '⏳'}</p>
+          <p>Opponent: ${opponent.name} ${opponent.readyToStart ? '✅' : '⏳'}</p>
             <ul>
-              ${this.vm.playersList.value.map(p => html`
+              ${this.vm.players.value.map(p => html`
                 <li>
                   ${p.name}
-                  ${p.isReadyToStart ? '✅ Ready' : '⏳ Waiting'}
+                  ${p.readyToStart ? '✅ Ready' : '⏳ Waiting'}
                 </li>
               `)}
             </ul>

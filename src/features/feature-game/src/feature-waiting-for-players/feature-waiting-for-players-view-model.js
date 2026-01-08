@@ -17,7 +17,7 @@ export class FeatureWaitingForPlayersViewModel {
     this.private = computed(() => this.sharedGameSession.private.value);
     
     // Players
-    this.playersList = computed(() => this.sharedGameSession.playersList.value);
+    this.players = computed(() => this.sharedGameSession.players.value);
     
     // Viewer-based
     this.playerUuid = computed(() => this.sharedGameSession.playerUuid.value);
@@ -33,7 +33,7 @@ export class FeatureWaitingForPlayersViewModel {
     // Navigation effect
     this._navEffect = effect(() => {
       if (this.sharedGameSession.gameStatus.value === GameStatus.READY_TO_START &&
-        this.sharedGameSession.playersList.value.length > 1) {
+        this.sharedGameSession.players.value.length > 1) {
         navigateTo(`/games/${this.sharedGameSession.gameUuid.value}/ready-to-start`);
       }
     });

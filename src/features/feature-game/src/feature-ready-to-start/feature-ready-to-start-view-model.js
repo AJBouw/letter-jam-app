@@ -1,4 +1,4 @@
-import { computed, effect, signal } from '@preact/signals';
+import { computed, signal } from '@preact/signals';
 import { FeatureGameService } from '../FeatureGameService.js';
 
 export class FeatureReadyToStartViewModel {
@@ -16,13 +16,13 @@ export class FeatureReadyToStartViewModel {
     this.private = computed(() => this.sharedGameSession.private.value);
     
     // Players
-    this.playersList = computed(() => this.sharedGameSession.playersList.value);
+    this.players = computed(() => this.sharedGameSession.players.value);
     
     // Viewer-based
     this.playerUuid = computed(() => this.sharedGameSession.playerUuid.value);
     this.playerName = computed(() => this.sharedGameSession.playerName.value);
     
-    this.thisPlayerIsReady = computed(() => this.sharedGameSession.me.value?.isReadyToStart ?? false);
+    this.thisPlayerIsReady = computed(() => this.sharedGameSession.me.value?.readyToStart ?? false);
     this.allPlayersReady = computed(() => this.sharedGameSession.allPlayersReady.value);
     
     this.me = this.sharedGameSession.me;
@@ -45,18 +45,18 @@ export class FeatureReadyToStartViewModel {
     this.markingReady.value = true;
     
     const me = this.sharedGameSession.me.value;
-    if (me) me.isReadyToStart = true;
+    if (me) me.readyToStart = true;
     
     console.debug('[feature-ready-to-start-view-model] this.session.gameUuid.value: ', this.sharedGameSession.gameUuid.value);
     console.debug('[feature-ready-to-start-view-model] this.session.playerUuid.value: ', this.sharedGameSession.playerUuid.value);
     
     try {
-      await this.service.markPlayerReady(this.sharedGameSession.gameUuid.value, this.sharedGameSession.playerUuid.value);
+      await this.service.markPlayerReady(this.sharedGameSession.gameUuid.value, this.sharedGameSession.playerUuid.value, true);
       
     } catch (err) {
       console.error('[ready-to-start] Failed to mark ready', err);
       // Only reset markingReady if the request failed
-      if (me) me.isReadyToStart = false;
+      if (me) me.readyToStart = false;
       this.markingReady.value = false;
     }
   }

@@ -19,15 +19,6 @@ export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement
     super.disconnectedCallback();
   }
   
-  createRenderRoot() { return this; } // Render in light DOM
-  
-  // updated(changedProps) {
-  //   if (!this.vm && this.sharedGameSession && this.wsService) {
-  //     this.vm = new FeatureWaitingForPlayersViewModel(this.sharedGameSession, this.wsService, this.connectivityService);
-  //     this.requestUpdate();
-  //   }
-  // }
-  
   firstUpdated() {
     if (!this.vm && this.sharedGameSession && this.wsService) {
       // Assign VM first
@@ -43,7 +34,7 @@ export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement
           if (!this.vm) return;
           
           // Read signals to subscribe
-          this.vm.playersList.value;
+          this.vm.players.value;
           this.vm.me.value;
           this.vm.markingReady?.value;
           this.vm.cancelling?.value;

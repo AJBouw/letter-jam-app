@@ -2,6 +2,7 @@ import { LitElement, html } from 'lit';
 import { computed, effect, signal } from '@preact/signals';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { navigateTo } from '../../../app-shell/routing/current-route.js';
+import { connectivityService } from '@letter-limbo/common';
 import { FeatureWaitingForPlayersView } from './feature-waiting-for-players/feature-waiting-for-players-view.js';
 import { FeatureReadyToStartView } from './feature-ready-to-start/feature-ready-to-start-view.js';
 import { FeaturePlayingView } from './feature-playing/feature-playing-view.js';
@@ -33,6 +34,8 @@ export class FeatureGameRootView extends ScopedElementsMixin(LitElement) {
     // Central routing
     this.nextRoute = computed(() => {
       if (!this.snapshotLoaded.value) return null;
+      
+      console.debug('[feature-game-root-view] central routing screen value: ', this.screen.value);
       
       const gameUuid = this.sharedGameSession.gameUuid.value;
       if (!gameUuid) return null;
@@ -83,53 +86,57 @@ export class FeatureGameRootView extends ScopedElementsMixin(LitElement) {
       return;
     }
     
-    // Restore player identity from session storage
-    this._initPlayer();
+    // Make available for children
+    this.connectivityService = connectivityService;
+    
+    // Restore viewer and fetch snapshot
+    this._restoreViewerAndFetchSnapshot();
     
     // Connect WS for live updates
     this._connectWebSocket();
-    
-    // Fetch backend snapshot (refresh / deep link support)
-    this._fetchGameSnapshot()
-      .finally(() =>
-        this.snapshotLoaded.value = true
-      );
   }
   
   disconnectedCallback() {
     super.disconnectedCallback();
   }
   
-  _initPlayer() {
-    this.sharedGameSession.restoreViewerFromSession?.();
+  _restoreViewerAndFetchSnapshot() {
+    // Restore player from session storage first
+    this.sharedGameSession.restoreViewerFromSession();
+    
+    if (!this.gameUuid) return;
+    
+    const service = new FeatureGameService();
+    const viewerUuid = this.sharedGameSession.playerUuid.value;
+    
+    service.fetchGameSnapshot(this.gameUuid, viewerUuid)
+      .then(response => {
+        this.sharedGameSession.applyBackendSnapshot(response.data);
+        console.debug('[FeatureGameRootView] Snapshot applied', this.sharedGameSession);
+      })
+      .catch(err => {
+        console.error('[FeatureGameRootView] Failed to fetch snapshot', err);
+      })
+      .finally(() => {
+        this.snapshotLoaded.value = true;
+      });
   }
   
   _connectWebSocket() {
-    if (!this.wsService.isConnected) this.wsService.connectForStatus();
+    if (!this.wsService.isConnected) {
+      this.wsService.connectForStatus();
+    }
     
-    if (this.gameUuid && this.sharedGameSession.playerUuid.value && this.sharedGameSession.playerName.value) {
+    if (this.gameUuid &&
+      this.sharedGameSession.playerUuid.value &&
+      this.sharedGameSession.playerName.value
+    ) {
       this.wsService.connectToGame(
         this.gameUuid,
         msg => this.sharedGameSession.handleMessage(msg),
         this.sharedGameSession.playerUuid.value,
         this.sharedGameSession.playerName.value
       );
-    }
-  }
-  
-  async _fetchGameSnapshot() {
-    if (!this.gameUuid) return;
-    
-    try {
-      const viewerUuid = sessionStorage.getItem('playerUuid');
-      const response = await new FeatureGameService().fetchGameSnapshot(this.gameUuid, viewerUuid);
-      
-      this.sharedGameSession.applyBackendSnapshot(response.data);
-      
-      console.debug('[FeatureGameRootView] Snapshot applied', this.sharedGameSession);
-      
-    } catch (err) {
-      console.error('[FeatureGameRootView] Failed to fetch game snapshot', err);
     }
   }
   
@@ -163,6 +170,7 @@ export class FeatureGameRootView extends ScopedElementsMixin(LitElement) {
             <feature-ready-to-start-view
               .sharedGameSession=${this.sharedGameSession}
               .wsService=${this.wsService}
+              .connectivityService=${this.connectivityService}
             ></feature-ready-to-start-view>
         `;
       
@@ -171,6 +179,7 @@ export class FeatureGameRootView extends ScopedElementsMixin(LitElement) {
             <feature-playing-view
               .sharedGameSession=${this.sharedGameSession}
               .wsService=${this.wsService}
+              .connectivityService=${this.connectivityService}
             ></feature-playing-view>
         `;
       

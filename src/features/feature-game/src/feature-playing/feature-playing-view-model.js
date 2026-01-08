@@ -1,14 +1,12 @@
 import { computed, effect, signal } from '@preact/signals';
-import { GameStatus } from '@letter-limbo/common';
-import { navigateTo } from '../../../../app-shell/routing/current-route.js';
-import { FeatureGameService } from "../FeatureGameService.js";
+import { FeatureGameWsService } from '../FeatureGameWsService.js';
 
 export class FeaturePlayingViewModel {
   constructor(sharedGameSession, wsService, connectivityService) {
     this.sharedGameSession = sharedGameSession;
     this.wsService = wsService;
     this.connectivityService = connectivityService;
-    this.service = new FeatureGameService();
+    this.wsService = new FeatureGameWsService(this.wsService);
     
     // Core
     this.gameUuid = computed(() => this.sharedGameSession.gameUuid.value);
@@ -18,41 +16,62 @@ export class FeaturePlayingViewModel {
     this.private = computed(() => this.sharedGameSession.private.value);
     
     // Players
-    this.playersList = computed(() => this.sharedGameSession.playersList.value);
+    this.players = computed(() => this.sharedGameSession.players?.value ?? []);
     
     // Viewer-based
     this.playerUuid = computed(() => this.sharedGameSession.playerUuid.value);
     this.playerName = computed(() => this.sharedGameSession.playerName.value);
     
     // Reactive me / opponent
-    this.me = computed(() => this.sharedGameSession.me.value);
-    this.opponent = computed(() => this.sharedGameSession.opponent.value);
+    this.me = computed(() => this.sharedGameSession.me?.value ?? null);
+    this.opponent = computed(() => this.sharedGameSession.opponent?.value ?? null);
     
     // Safe reactive derived values
-    this.thisPlayerIsReady = computed(() => this.me.value?.isReadyToStart ?? false);
-    this.allPlayersReady = computed(() => this.sharedGameSession.allPlayersReady.value);
-    this.activePlayerUuid = computed(() => this.sharedGameSession.activePlayerUuid.value);
-    this.activePlayerName = computed(() => this.sharedGameSession.activePlayerName.value);
+    this.activePlayerUuid = computed(() => this.sharedGameSession.activePlayerUuid?.value ?? null);
+    // this.activePlayerName = computed(() => this.sharedGameSession.activePlayerName.value);
+    this.activePlayerName = computed(() =>
+      this.players.value.find(p => p.uuid === this.activePlayerUuid.value)?.name ?? '…'
+    );
+    this.isActivePlayer = computed(() =>
+      this.activePlayerUuid.value && this.playerUuid.value
+        ? this.activePlayerUuid.value === this.playerUuid.value
+        : false
+    );
+    
+    // Round info
+    this.roundNumber = computed(() => this.sharedGameSession.roundNumber?.value ?? 0);
+    this.roundStatus = computed(() => this.sharedGameSession.roundStatus?.value ?? null);
+    this.blocks = computed(() => this.sharedGameSession.blocks?.value ?? []);
+    this.guesses = computed(() => this.sharedGameSession.guesses?.value ?? []);
+    this.maskedWord = computed(() => this.sharedGameSession.maskedWord?.value ?? '');
+    
+    // Local input state
+    this.guessInput = signal('');
+    this.submittingGuess = signal(false);
     
     // Game state signals
     this.leavingGame = signal(false);
     
-    // Navigate when game starts
-    this._navEffect = effect(() => {
-      if (this.sharedGameSession.gameStatus.value === GameStatus.PLAYING) {
-        navigateTo(`/games/${this.gameUuid.value}/playing`);
-      }
-    });
-    
-    // Optional: log when me/opponent becomes available
     effect(() => {
-      if (this.me.value) console.debug('[PlayingViewModel] me ready:', this.me.value);
-      if (this.opponent.value) console.debug('[PlayingViewModel] opponent ready:', this.opponent.value);
+      console.debug('[FeaturePlayingViewModel] blocks', this.blocks.value);
     });
   }
   
-  dispose() {
-    this._navEffect();
+  updateGuess(value) {
+    this.guessInput.value = value.toUpperCase();
+  }
+  
+  submitGuess() {
+    if (!this.isActivePlayer.value) return;
+    this.submittingGuess.value = true;
+    
+    this.wsService.submitGuess({
+      gameUuid: this.sharedGameSession.gameUuid.value,
+      roundUuid: this.sharedGameSession.roundUuid.value,
+      playerUuid: this.sharedGameSession.playerUuid.value,
+      guess: this.guessInput.value
+    });
+    this.guessInput.value = '';
   }
   
   // Leave game
@@ -61,7 +80,7 @@ export class FeaturePlayingViewModel {
     this.leavingGame.value = true;
     
     try {
-      await this.service.cancelGame(this.gameUuid.value, this.playerUuid.value);
+      await this.wsService.cancelGame(this.gameUuid.value, this.playerUuid.value);
     } catch (err) {
       console.error('[playing] Failed to leave game', err);
     } finally {
