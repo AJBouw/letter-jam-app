@@ -37,5 +37,5 @@ export class ApiService {
   }
 }
 
-// Export singleton instance
-export const featureHomeService = new ApiService();
+// Singleton instance
+export const apiService = new ApiService();
