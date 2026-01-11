@@ -1,7 +1,7 @@
 import { computed, effect } from '@preact/signals';
-import { WebSocketStatus } from '../web-socket/ws-status.js';
+import { WebSocketStatus } from './web-socket/ws-status.js';
 import { backendService } from "./BackendService.js";
-import { wsService } from "./WsService.js";
+import { wsService } from "./web-socket/WsService.js";
 
 export class ConnectivityService {
   constructor() {

@@ -61,11 +61,17 @@ export class RouterOutlet extends ScopedElementsMixin(LitElement) {
     
     // Fallback / static routes
     switch (path) {
-      case '/': case '/home': return html`<landing-page-view></landing-page-view>`;
-      case '/login': return html`<feature-login-view></feature-login-view>`;
-      case '/test': return html`<ws-test-view></ws-test-view>`;
-      case '/test/send': return html`<ws-send-test-view></ws-send-test-view>`;
-      default: return html`<h2>404 – Page Not Found</h2>`;
+      case '/':
+      case '/home':
+        return html`<landing-page-view></landing-page-view>`;
+      case '/login':
+        return html`<feature-login-view></feature-login-view>`;
+      case '/test':
+        return html`<ws-test-view></ws-test-view>`;
+      case '/test/send':
+        return html`<ws-send-test-view></ws-send-test-view>`;
+      default:
+        return html`<h2>404 – Page Not Found</h2>`;
     }
   }
   

@@ -1,7 +1,7 @@
 import '@webcomponents/scoped-custom-element-registry';
 import './app-shell.js';
 import { ThemeService } from '@letter-limbo/common';
-import { lightTheme, darkTheme } from '../../packages/common/src/ui/themes.js';
+import { lightTheme, darkTheme } from '../../packages/common/ui/themes.js';
 import { GlobalStyles } from "../../global.styles.js";
 
 // Inject global styles

@@ -1,17 +1,17 @@
-import { computed, signal } from '@preact/signals';
-import { connectivity } from '@letter-limbo/common';
+import { computed, effect, signal } from '@preact/signals';
+import { connectivityService } from '@letter-limbo/common';
 import { navigateTo } from '../../routing/current-route.js';
 
 export class LandingPageViewModel {
   constructor() {
-    this.connectivity = connectivity;
+    this.connectivityService = connectivityService;
     
     // UI / view state
     this.welcomeMessage = signal('Welcome!');
     this.loading = signal(true);
     
     // Internal
-    this.canSubmit = computed(() => this.connectivity.backendOk.value && this.connectivity.wsOk.value);
+    this.canSubmit = computed(() => this.connectivityService.backendOk.value && this.connectivityService.wsServerOk.value);
     
     // Game list
     this.featuredGames = signal([
@@ -22,16 +22,17 @@ export class LandingPageViewModel {
   }
   
   start() {
-    this.connectivity.start('landing-page-lobby');
+    this.connectivityService.start();
     
-    this._readyEffect = this.connectivity.canSubmit.subscribe(ok => {
-      if (ok) this.loading.value = false;
+    // Stop loading once both backend + WS server heartbeat are OK
+    this._readyEffect = effect(() => {
+      if (this.canSubmit.value) this.loading.value = false;
     });
   }
   
   stop() {
     this._readyEffect?.();
-    this.connectivity.stop();
+    this.connectivityService.stop();
   }
   
   startGame(gameUuid) {

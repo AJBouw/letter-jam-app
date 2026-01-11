@@ -15,7 +15,7 @@ export * from './lit/signal-controller.js';
 export * from './services/BackendService.js';
 export * from './services/ConnectivityService.js';
 export * from './services/ThemeService.js';
-export * from './services/WsService.js';
+export * from './services/web-socket/WsService.js';
 
 // Store
 export * from './store/error-store.js';
@@ -30,4 +30,4 @@ export * from './utils/validation/password-validator.js';
 export * from './utils/validation/username-validator.js';
 
 // Web Socket
-export * from './web-socket/ws-status.js';
+export * from './services/web-socket/ws-status.js';
