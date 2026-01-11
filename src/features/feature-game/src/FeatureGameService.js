@@ -1,15 +1,15 @@
 import { apiGet, apiPost } from '@letter-limbo/common';
 
 export class FeatureGameService {
-  async fetchGameSnapshot(gameUuid, viewerUuid) {
-    if (!gameUuid) throw new Error('gameUuid is required');
+  async getGame(gameUuid, playerUuid) {
+    const response = await apiGet(
+      'get-game',
+      `/games/${gameUuid}?playerUuid=${playerUuid}`
+    );
     
-    let path = `/games/${gameUuid}/snapshot`;
-    if (viewerUuid) {
-      path += `?viewerUuid=${viewerUuid}`;
-    }
+    console.debug('[getGame] Backend payload:', JSON.stringify(response.data, null, 2));
     
-    return apiGet('fetchGameSnapshot', path);
+    return response;
   }
   
   async markPlayerReady(gameUuid, playerUuid) {

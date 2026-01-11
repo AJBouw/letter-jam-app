@@ -23,6 +23,7 @@ export class FeaturePlayingView extends ScopedElementsMixin(LitElement) {
     console.debug('[FeaturePlayingView] disconnected');
     
     this._signalEffect?.();
+    this._readyCheckEffect?.();
     super.disconnectedCallback();
   }
   
@@ -46,16 +47,27 @@ export class FeaturePlayingView extends ScopedElementsMixin(LitElement) {
         this.connectivityService);
       console.debug('[feature-playing-view] VM initialized: ', this.vm);
       
+      this._readyCheckEffect = effect(() => {
+        console.debug('[READY CHECK]', {
+          gameUuid: this.sharedGameSession.gameUuid.value,
+          roundUuid: this.sharedGameSession.roundUuid.value,
+          playerUuid: this.sharedGameSession.playerUuid.value
+        });
+      });
+      
+      
       // Defer effect setup to next microtask
       Promise.resolve().then(() => {
         this._signalEffect = effect(() => {
           if (!this.vm) return;
           
           // Access signals to subscribe for reactivity
-          this.vm.players.value;
-          this.vm.blocks.value;
-          this.vm.guessInput.value;
+          this.vm.me.value;
+          this.vm.opponent.value;
+          this.vm.boardRows.value;
           this.vm.isActivePlayer.value;
+          this.vm.roundNumber.value;
+          this.vm.guessInput.value;
           
           // Request Lit re-render in a safe async cycle
           this.requestUpdate();
@@ -65,39 +77,22 @@ export class FeaturePlayingView extends ScopedElementsMixin(LitElement) {
   }
   
   render() {
-    if (!this.vm) return html`<div>Loading…</div>`;
+    if (!this.vm) {
+      return html`<div>Loading…</div>`;
+    }
     
     const me = this.vm.me.value;
     const opponent = this.vm.opponent.value;
-    if (!me || !opponent) return html`<div>Waiting for players…</div>`;
     
-    const wordLength = this.vm.blocks.value.length;
-    const maxGuesses = 5;
-    const guesses = this.vm.guesses.value;
-    const currentInput = this.vm.guessInput.value;
+    if (!me || !opponent) {
+      return html`<div>Waiting for players…</div>`;
+    }
     
+    const rows = this.vm.boardRows.value ?? [];
+    const columns = rows[0]?.length ?? 0;
     const isActive = this.vm.isActivePlayer.value;
-    
-    // Prepare 5 rows
-    const rows = Array.from({ length: maxGuesses }, (_, rowIndex) => {
-      if (rowIndex < guesses.length) {
-        // Completed guess: show only guessed letters
-        const guess = guesses[rowIndex];
-        return Array.from({ length: wordLength }, (_, i) => guess[i] ?? '_');
-      } else if (rowIndex === guesses.length) {
-        // Active row: show typed letters + underscores
-        return Array.from({ length: wordLength }, (_, i) => {
-          if (rowIndex === 0 && i === 0) {
-            // First row, first letter is always revealed
-            return this.vm.blocks.value[0] ?? '_';
-          }
-          return currentInput[i] ?? '_';
-        });
-      } else {
-        // Future rows: empty
-        return Array.from({ length: wordLength }, () => '');
-      }
-    });
+    const canSubmit = this.vm.canSubmitGuess.value;
+    const isRoundFinished = this.vm.isRoundFinished.value;
     
     return html`
       <div class="playing-container">
@@ -106,46 +101,61 @@ export class FeaturePlayingView extends ScopedElementsMixin(LitElement) {
           <div class="player-name">${me.name}</div>
           <div class="player-score">Score: ${me.score}</div>
         </div>
-
+      
         <!-- Board -->
         <div class="board">
           <div class="round-indicator">Round ${this.vm.roundNumber.value ?? '…'}</div>
-
+    
           <!-- Grid: 5 rows *N columns -->
-          <div class="grid" style="
-            grid-template-rows: repeat(${maxGuesses}, 50px);
-            grid-template-columns: repeat(${wordLength}, 50px);
+          <div class="grid"
+           style="
+            grid-template-rows: repeat(${rows.length}, 50px);
+            grid-template-columns: repeat(${columns}, 50px);
           ">
-            ${rows.map((row, rowIndex) => row.map(letter => html`
-              <div class="cell ${letter !== '_' && letter !== '' ? 'revealed' : ''}">
-                ${letter || ''}
-              </div>
-            `))}
+              ${rows.map(row =>
+                      row.map(cell => html`
+                          <div class="cell ${cell.status !== 'EMPTY' ? 'revealed' : ''}">
+                              ${cell.letter}
+                          </div>
+                      `)
+              )}
+          </div>
+    
+          <!-- Input + button -->
+          <div class="guess-container">
+            <input
+              class="guess-input"
+              type="text"
+              maxlength="${columns}"
+              .value=${this.vm.guessInput.value}
+              ?disabled=${!isActive}
+              @input=${e => this.vm.updateGuess(e.target.value)}
+              @keydown=${e => e.key === 'Enter' && this.vm.submitGuess()}
+              placeholder="Type your guess"
+            />
+            <button
+              class="btn btn-primary"
+              ?disabled=${!isActive}
+              @click=${() => this.vm.submitGuess()}
+              style="padding:6px 12px;"
+            >
+              Guess
+            </button>
+          </div>
+          
+          <!-- Message feedback -->
+          <div class="submit-message">
+              ${this.vm.submitMessage.value}
           </div>
 
-            <!-- Input + button -->
-            <div class="guess-container" style="margin-top: 10px; display: flex; gap: 5px;">
-              <input
-                class="guess-input"
-                type="text"
-                maxlength="${wordLength}"
-                .value=${currentInput}
-                ?disabled=${!isActive}
-                @input=${e => this.vm.updateGuess(e.target.value)}
-                @keydown=${e => e.key === 'Enter' && this.vm.submitGuess()}
-                placeholder="Type your guess"
-              />
-              <button
-                class="btn btn-primary"
-                ?disabled=${!isActive}
-                @click=${() => this.vm.submitGuess()}
-                style="padding:6px 12px;"
-              >
-                Guess
-              </button>
+          <!-- Winner message -->
+          ${isRoundFinished ? html`
+            <div class="winner-message">
+              Winner: ${this.vm.winningPlayerUuid.value === me.uuid ? 'You!' : opponent.name}
             </div>
+          ` : ''}
         </div>
-
+      
         <!-- Right player -->
         <div class="player-info right">
             <div class="player-name">${opponent.name}</div>

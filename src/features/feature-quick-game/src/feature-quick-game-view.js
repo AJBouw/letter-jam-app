@@ -44,15 +44,7 @@ export class FeatureQuickGameView extends ScopedElementsMixin(LitElement) {
       this.vm.nameTouched,
       this.vm.emailTouched,
       this.vm.nameValidation,
-      this.vm.emailValidation,
-      this.vm.sharedGameSession.gameStatus,
-      this.vm.sharedGameSession.playersList,
-      this.vm.sharedGameSession.allPlayersReady,
-      this.vm.sharedGameSession.thisPlayerIsReady,
-      this.vm.sharedGameSession.activePlayerUuid,
-      this.vm.sharedGameSession.activePlayerName,
-      this.vm.sharedGameSession.opponents,
-      this.vm.sharedGameSession.blocks
+      this.vm.emailValidation
     ]);
     
     this.vm.start();

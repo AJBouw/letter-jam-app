@@ -6,29 +6,21 @@ export class FeaturePlayingViewModel {
     this.sharedGameSession = sharedGameSession;
     this.wsService = wsService;
     this.connectivityService = connectivityService;
-    this.wsService = new FeatureGameWsService(this.wsService);
     
-    // Core
-    this.gameUuid = computed(() => this.sharedGameSession.gameUuid.value);
-    this.gameStatus = computed(() => this.sharedGameSession.gameStatus.value);
-    this.language = computed(() => this.sharedGameSession.language.value);
-    this.maxPlayers = computed(() => this.sharedGameSession.maxPlayers.value);
-    this.private = computed(() => this.sharedGameSession.private.value);
+    // WS Service (safe subscription only after WS ready)
+    this.featureGameWsService = new FeatureGameWsService(
+      this.sharedGameSession,
+      this.wsService
+    );
     
-    // Players
-    this.players = computed(() => this.sharedGameSession.players?.value ?? []);
-    
-    // Viewer-based
-    this.playerUuid = computed(() => this.sharedGameSession.playerUuid.value);
-    this.playerName = computed(() => this.sharedGameSession.playerName.value);
-    
-    // Reactive me / opponent
-    this.me = computed(() => this.sharedGameSession.me?.value ?? null);
-    this.opponent = computed(() => this.sharedGameSession.opponent?.value ?? null);
-    
-    // Safe reactive derived values
-    this.activePlayerUuid = computed(() => this.sharedGameSession.activePlayerUuid?.value ?? null);
-    // this.activePlayerName = computed(() => this.sharedGameSession.activePlayerName.value);
+    // ============================================= //
+    // Derived game state (delegated to GameSession) //
+    // ============================================= //
+    this.players = computed(() => this.sharedGameSession?.players?.value ?? []);
+    this.playerUuid = computed(() => this.sharedGameSession?.playerUuid?.value ?? null);
+    this.me = computed(() => this.sharedGameSession?.me?.value ?? null);
+    this.opponent = computed(() => this.sharedGameSession?.opponent?.value ?? null);
+    this.activePlayerUuid = computed(() => this.sharedGameSession?.activePlayerUuid?.value ?? null);
     this.activePlayerName = computed(() =>
       this.players.value.find(p => p.uuid === this.activePlayerUuid.value)?.name ?? '…'
     );
@@ -37,54 +29,77 @@ export class FeaturePlayingViewModel {
         ? this.activePlayerUuid.value === this.playerUuid.value
         : false
     );
+    this.roundNumber = computed(() => this.sharedGameSession?.roundNumber?.value ?? 0);
+    this.roundStatus = computed(() => this.sharedGameSession?.roundStatus?.value ?? null);
+    this.winningPlayerUuid = computed(() => this.sharedGameSession.roundDetails.value?.winningPlayerUuid ?? null);
+    this.isRoundFinished = computed(() => this.roundStatus.value === 'FINISHED');
     
-    // Round info
-    this.roundNumber = computed(() => this.sharedGameSession.roundNumber?.value ?? 0);
-    this.roundStatus = computed(() => this.sharedGameSession.roundStatus?.value ?? null);
-    this.blocks = computed(() => this.sharedGameSession.blocks?.value ?? []);
-    this.guesses = computed(() => this.sharedGameSession.guesses?.value ?? []);
-    this.maskedWord = computed(() => this.sharedGameSession.maskedWord?.value ?? '');
+    this.boardRows = computed(() => this.sharedGameSession?.boardRows?.value ?? []);
     
-    // Local input state
+    this.canSubmitGuess = computed(() =>
+      this.isActivePlayer.value && this.roundStatus.value === 'IN_PROGRESS'
+    );
+    
+    // ============== //
+    // UI-local state //
+    // ============== //
     this.guessInput = signal('');
     this.submittingGuess = signal(false);
-    
-    // Game state signals
+    this.submitMessage = signal('');
     this.leavingGame = signal(false);
     
+    // Connect WS safely if all identifiers exist
     effect(() => {
-      console.debug('[FeaturePlayingViewModel] blocks', this.blocks.value);
+      if (
+        this.sharedGameSession.gameUuid.value &&
+        this.sharedGameSession.playerUuid.value &&
+        this.sharedGameSession.playerName.value
+      ) {
+        if (this.wsService?.stompClient?.connected) {
+          this.featureGameWsService.connect(
+            this.sharedGameSession.gameUuid.value,
+            this.sharedGameSession.playerUuid.value,
+            this.sharedGameSession.playerName.value
+          );
+        }
+      }
     });
   }
   
   updateGuess(value) {
-    this.guessInput.value = value.toUpperCase();
+    this.guessInput.value = (value ?? '').toUpperCase();
   }
   
   submitGuess() {
-    if (!this.isActivePlayer.value) return;
-    this.submittingGuess.value = true;
+    if (!this.sharedGameSession.canSubmitGuess.value) {
+      this.submitMessage.value = 'Not your turn!';
+      return;
+    }
     
-    this.wsService.submitGuess({
+    const payload = {
       gameUuid: this.sharedGameSession.gameUuid.value,
       roundUuid: this.sharedGameSession.roundUuid.value,
       playerUuid: this.sharedGameSession.playerUuid.value,
-      guess: this.guessInput.value
-    });
-    this.guessInput.value = '';
-  }
-  
-  // Leave game
-  async leaveGame() {
-    if (this.leavingGame.value) return;
-    this.leavingGame.value = true;
+      guess: this.guessInput.value ?? ''
+    };
+    
+    if (!payload.gameUuid || !payload.roundUuid || !payload.playerUuid) return;
     
     try {
-      await this.wsService.cancelGame(this.gameUuid.value, this.playerUuid.value);
+      this.featureGameWsService.submitGuess(payload);
+      this.guessInput.value = '';
+      this.submittingGuess.value = true;
+      this.submitMessage.value = 'Checking guess…';
+      setTimeout(() => {
+        if (this.submittingGuess.value) {
+          this.submittingGuess.value = false;
+          this.submitMessage.value = 'Submission failed, try again!';
+        }
+      }, 5000);
     } catch (err) {
-      console.error('[playing] Failed to leave game', err);
-    } finally {
-      this.leavingGame.value = false;
+      console.error('[FeaturePlayingViewModel] Submit guess failed', err);
+      this.submittingGuess.value = false;
+      this.submitMessage.value = 'Could not send guess, check connection.';
     }
   }
 }
