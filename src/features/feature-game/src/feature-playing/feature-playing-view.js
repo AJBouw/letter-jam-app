@@ -3,6 +3,7 @@ import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { effect } from "@preact/signals";
 import { FeaturePlayingViewModel } from './feature-playing-view-model.js';
 import { FeaturePlayingViewStyles } from './feature-playing-view.styles.js';
+import { LetterFeedbackStatus } from "./domain/LetterFeedbackStatus.js";
 
 export class FeaturePlayingView extends ScopedElementsMixin(LitElement) {
   constructor() {
@@ -76,6 +77,19 @@ export class FeaturePlayingView extends ScopedElementsMixin(LitElement) {
     }
   }
   
+  getCellClass(status) {
+    switch(status) {
+      case LetterFeedbackStatus.CORRECT_POSITION:
+        return 'cell correct-position';
+      case LetterFeedbackStatus.WRONG_POSITION:
+        return 'cell wrong-position';
+      case LetterFeedbackStatus.NOT_IN_WORD:
+        return 'cell not-in-word';
+      default:
+        return 'cell empty';
+    }
+  }
+  
   render() {
     if (!this.vm) {
       return html`<div>Loading…</div>`;
@@ -112,13 +126,13 @@ export class FeaturePlayingView extends ScopedElementsMixin(LitElement) {
             grid-template-rows: repeat(${rows.length}, 50px);
             grid-template-columns: repeat(${columns}, 50px);
           ">
-              ${rows.map(row =>
-                      row.map(cell => html`
-                          <div class="cell ${cell.status !== 'EMPTY' ? 'revealed' : ''}">
-                              ${cell.letter}
-                          </div>
-                      `)
-              )}
+            ${rows.map(row =>
+              row.map(cell => html`
+                  <div class="${this.getCellClass(cell.status)} ${cell.status !== LetterFeedbackStatus.NOT_IN_WORD ? 'revealed' : ''}">
+                  ${cell.letter}
+                </div>
+              `)
+            )}
           </div>
     
           <!-- Input + button -->
