@@ -37,12 +37,27 @@ export async function apiPost(key, path, body) {
     const res = await fetch(`${AppConfig.apiBase}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: body ? JSON.stringify(body) : undefined,
     });
+    
+    const raw = await res.text();
+    
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || res.statusText);
+      let message = res.statusText;
+      try {
+        const parsed = raw ? JSON.parse(raw) : null;
+        message = parsed?.message || message;
+      } catch {
+        // ignore JSON parse errors
+      }
+      throw new Error(message)
     }
-    return res.json();
+    
+    // 204 or empty body
+    if (!raw) {
+      return;
+    }
+    
+    return JSON.parse(raw);
   });
 }
