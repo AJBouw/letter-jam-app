@@ -1,7 +1,7 @@
 import { signal, computed } from '@preact/signals';
 import { LoginService } from './feature-login-service.js';
-import { usernameValidatorSignal } from '../../../../packages/common/src/utils/validation/username-validator.js';
-import { passwordValidatorSignal } from '../../../../packages/common/src/utils/validation/password-validator.js';
+import { usernameValidatorSignal } from '@letter-limbo/common';
+import { passwordValidatorSignal } from '@letter-limbo/common';
 import { navigateTo } from '../../../app-shell/routing/current-route.js';
 
 export class FeatureLoginViewModel {

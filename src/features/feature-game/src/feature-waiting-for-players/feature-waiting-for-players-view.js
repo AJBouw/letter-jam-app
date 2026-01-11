@@ -1,8 +1,8 @@
 import { html, LitElement } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
+import { effect } from "@preact/signals";
 import { FeatureWaitingForPlayersViewModel } from './feature-waiting-for-players-view-model.js';
 import { FeatureWaitingForPlayersViewStyles } from './feature-waiting-for-players-view.styles.js';
-import { effect } from "@preact/signals";
 
 export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement) {
   static properties = {
@@ -34,10 +34,8 @@ export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement
           if (!this.vm) return;
           
           // Read signals to subscribe
-          this.vm.players.value;
           this.vm.me.value;
-          this.vm.markingReady?.value;
-          this.vm.cancelling?.value;
+          this.vm.opponent.value;
           
           // Request re-render, but Lit will now consider it a new cycle
           this.requestUpdate();
@@ -70,8 +68,8 @@ export class FeatureWaitingForPlayersView extends ScopedElementsMixin(LitElement
         <div>Private: ${session.private.value ? 'Yes' : 'No'}</div>
         <button
           class="btn btn-secondary"
-          @click=${() => this.vm.cancelWaiting()}
-          disabled=${this.vm.cancelling.value}
+          @click=${() => this.vm.cancelGame()}
+          disabled=${this.vm.cancelingGame.value}
         >
             Cancel
         </button>

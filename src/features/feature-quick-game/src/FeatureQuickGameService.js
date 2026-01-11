@@ -5,7 +5,8 @@ export class FeatureQuickGameService {
     return apiPost(
       'quick-start',
       '/games/quick-start',
-      data);
+      data
+    );
   }
   
   async cancelGame(gameUuid, playerUuid) {

@@ -33,7 +33,7 @@ export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
           // Access signals to subscribe for reactivity
           this.vm.players.value;
           this.vm.thisPlayerIsReady.value;
-          this.vm.markingReady.value;
+          this.vm.activePlayerName.value;
           
           // Request Lit re-render in a safe async cycle
           this.requestUpdate();
@@ -43,7 +43,7 @@ export class FeatureReadyToStartView extends ScopedElementsMixin(LitElement) {
   }
   
   render() {
-    if (!this.vm || !this.vm.players.value.length) {
+    if (!this.vm) {
       console.debug('[feature-ready-to-start-view] No vm or player list');
       return html`<div>Loading…</div>`;
     }

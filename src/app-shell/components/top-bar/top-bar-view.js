@@ -17,7 +17,7 @@ export class TopBarView extends ScopedElementsMixin(LitElement) {
   
   /** Toggle between light and dark theme manually */
   _toggleTheme() {
-    import('../../../../packages/common/src/ui/themes.js').then(({ lightTheme, darkTheme }) => {
+    import('../../../../packages/common/ui/themes.js').then(({ lightTheme, darkTheme }) => {
       themeService.toggle(lightTheme, darkTheme);
     })
   }

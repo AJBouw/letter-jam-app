@@ -37,10 +37,6 @@ export class FeatureLoginView extends ScopedElementsMixin(LitElement) {
     await this.vm.login();
   }
   
-  createRenderRoot() {
-    return this;
-  }
-  
   render() {
     const vm = this.vm;
     return html`

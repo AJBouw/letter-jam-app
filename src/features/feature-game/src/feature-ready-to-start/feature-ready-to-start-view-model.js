@@ -1,39 +1,33 @@
 import { computed, signal } from '@preact/signals';
 import { FeatureGameService } from '../FeatureGameService.js';
+import { FeatureGameWsService } from '../FeatureGameWsService.js';
 
 export class FeatureReadyToStartViewModel {
   constructor(sharedGameSession, wsService, connectivityService) {
     this.sharedGameSession = sharedGameSession;
     this.wsService = wsService;
     this.connectivityService = connectivityService;
-    this.service = new FeatureGameService();
+    this.featureGameService = new FeatureGameService();
+    this.featureGameWsService = new FeatureGameWsService(this.sharedGameSession, this.wsService);
     
-    // Core
-    this.gameUuid = computed(() => this.sharedGameSession.gameUuid.value);
-    this.gameStatus = computed(() => this.sharedGameSession.gameStatus.value);
-    this.language = computed(() => this.sharedGameSession.language.value);
-    this.maxPlayers = computed(() => this.sharedGameSession.maxPlayers.value);
-    this.private = computed(() => this.sharedGameSession.private.value);
-    
+    // ============================================= //
+    // Derived game state (delegated to GameSession) //
+    // ============================================= //
     // Players
     this.players = computed(() => this.sharedGameSession.players.value);
     
-    // Viewer-based
-    this.playerUuid = computed(() => this.sharedGameSession.playerUuid.value);
-    this.playerName = computed(() => this.sharedGameSession.playerName.value);
+    // Reactive me / opponent
+    this.me = computed(() => this.sharedGameSession.me?.value ?? null);
+    this.opponent = computed(() => this.sharedGameSession.opponent?.value ?? null);
     
     this.thisPlayerIsReady = computed(() => this.sharedGameSession.me.value?.readyToStart ?? false);
     this.allPlayersReady = computed(() => this.sharedGameSession.allPlayersReady.value);
     
-    this.me = this.sharedGameSession.me;
-    console.debug('[feature-waiting-for-players-view-model] this.me: ', this.me);
-    
-    this.opponent = this.sharedGameSession.opponent;
-    console.debug('[feature-waiting-for-players-view-model] this.opponent: ', this.opponent);
-    
-    this.activePlayerUuid = computed(() => this.sharedGameSession.activePlayerUuid.value);
     this.activePlayerName = computed(() => this.sharedGameSession.activePlayerName.value);
     
+    // ======== //
+    // UI state //
+    // ======== //
     this.markingReady = signal(false);
     this.leavingGame = signal(false);
   }
@@ -45,13 +39,15 @@ export class FeatureReadyToStartViewModel {
     this.markingReady.value = true;
     
     const me = this.sharedGameSession.me.value;
-    if (me) me.readyToStart = true;
+    if (me) {
+      me.readyToStart = true;
+    }
     
     console.debug('[feature-ready-to-start-view-model] this.session.gameUuid.value: ', this.sharedGameSession.gameUuid.value);
     console.debug('[feature-ready-to-start-view-model] this.session.playerUuid.value: ', this.sharedGameSession.playerUuid.value);
     
     try {
-      await this.service.markPlayerReady(this.sharedGameSession.gameUuid.value, this.sharedGameSession.playerUuid.value, true);
+      await this.featureGameService.markPlayerReady(this.sharedGameSession.gameUuid.value, this.sharedGameSession.playerUuid.value, true);
       
     } catch (err) {
       console.error('[ready-to-start] Failed to mark ready', err);
@@ -68,10 +64,10 @@ export class FeatureReadyToStartViewModel {
     this.leavingGame.value = true;
     
     try {
-      await this.service.cancelGame(
-        this.sharedGameSession.gameUuid.value,
-        this.sharedGameSession.playerUuid.value
-      );
+      await this.featureGameWsService.leaveGame({
+        gameUuid: this.sharedGameSession.gameUuid.value,
+        playerUuid: this.sharedGameSession.playerUuid.value
+      });
     } catch (err) {
       console.error('Failed to cancel game', err);
     } finally {
