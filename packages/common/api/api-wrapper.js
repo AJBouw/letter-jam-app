@@ -1,34 +1,41 @@
 import { AppConfig } from '../config/app-config.js';
 import { loadingStore } from '../store/loading-store.js';
 import { errorStore } from '../store/error-store.js';
+import { createAppError } from "../error-handling/app-error.js";
 
 /**
  * Wraps any async function to auto-handle loading + error state
  */
 export async function apiCall(key, asyncFn) {
+  loadingStore.set(key, true);
+  errorStore.clear(key);
+  
   try {
-    loadingStore.set(key, true);
-    errorStore.clear(key);
-    
-    const result = await asyncFn();
-    
-    loadingStore.set(key, false);
-    return result;
+    return await asyncFn();
   } catch (err) {
+    const appError = err?.name === 'AppError'
+      ? err
+      : createAppError({
+        code: err?.code || 'NETWORK_ERROR',
+        message: err?.message,
+        status: err?.status,
+        cause: err
+      });
+    
+    // Store message for the frontend
+    errorStore.set(key, appError.message);
+    
+    // Throw normalized error so ViewModel can rely on it
+    throw appError;
+  } finally {
     loadingStore.set(key, false);
-    errorStore.set(key, err.message || 'Unknown error');
-    throw err;
   }
 }
 
 export async function apiGet(key, path) {
   return apiCall(key, async () => {
     const res = await fetch(`${AppConfig.apiBase}${path}`);
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.message || res.statusText);
-    }
-    return res.json();
+    return handleResponse(res);
   });
 }
 
@@ -39,25 +46,28 @@ export async function apiPost(key, path, body) {
       headers: { 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
     });
-    
-    const raw = await res.text();
-    
-    if (!res.ok) {
-      let message = res.statusText;
-      try {
-        const parsed = raw ? JSON.parse(raw) : null;
-        message = parsed?.message || message;
-      } catch {
-        // ignore JSON parse errors
-      }
-      throw new Error(message)
-    }
-    
-    // 204 or empty body
-    if (!raw) {
-      return;
-    }
-    
-    return JSON.parse(raw);
+    return handleResponse(res);
   });
+}
+
+async function handleResponse(res) {
+  const raw = await res.text();
+  let parsed = null;
+  
+  try {
+    parsed = raw ? JSON.parse(raw) : null;
+  } catch {
+    // ignore parse errors
+  }
+  
+  if (!res.ok) {
+    throw createAppError({
+      message: parsed?.error?.message || res.statusText || 'Request failed',
+      code: parsed?.error?.code || `HTTP_${res.status}`,
+      status: res.status,
+      cause: parsed
+    });
+  }
+  
+  return parsed;
 }
