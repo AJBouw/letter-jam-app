@@ -11,7 +11,11 @@ export async function apiCall(key, asyncFn) {
   errorStore.clear(key);
   
   try {
-    return await asyncFn();
+    const response = await asyncFn();
+    
+    console.info(`[API] Response (${key}):\n`, JSON.stringify(response, null, 2));
+    
+    return response;
   } catch (err) {
     const appError = err?.name === 'AppError'
       ? err
@@ -45,9 +49,14 @@ export async function apiPost(key, path, body) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined,
+      credentials: 'include'
     });
-    return handleResponse(res);
-  });
+    const text = await res.text();
+    let data;
+    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+    if (!res.ok) throw createAppError({ message: data?.message || res.statusText, status: res.status, cause: data });
+    return data;
+  }, body);
 }
 
 async function handleResponse(res) {
