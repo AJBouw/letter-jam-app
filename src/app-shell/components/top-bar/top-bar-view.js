@@ -131,7 +131,7 @@ export class TopBarView extends ScopedElementsMixin(LitElement) {
             <!-- Logout -->
           <div class="d-flex align-items-center gap-2">
             <button
-              class="btn btn-login-logout btn-sm"
+              class="btn btn-cta btn-sm"
               @click=${() => {
                   if (loggedIn) {
                       this.vm.handleAuthToggle();

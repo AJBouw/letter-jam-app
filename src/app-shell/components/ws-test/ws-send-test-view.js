@@ -8,12 +8,17 @@ export class WsSendTestView extends LitElement {
   constructor() {
     super();
     this.messages = [];
-    this.client = null;
+    this.wsClient = null;
   }
   
   connectedCallback() {
     super.connectedCallback();
     this._connectWebSocket();
+  }
+  
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this.client) this.client.deactivate();
   }
   
   _connectWebSocket() {

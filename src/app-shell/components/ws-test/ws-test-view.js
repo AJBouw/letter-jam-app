@@ -12,11 +12,16 @@ export class WsTestView extends LitElement {
     this.messages = [];
   }
   
-  createRenderRoot() { return this; }
+  createRenderRoot() { return this; } // Render in light DOM
   
   connectedCallback() {
     super.connectedCallback();
     this._connectWebSocket();
+  }
+  
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this.wsClient) this.wsClient.deactivate();
   }
   
   _connectWebSocket() {

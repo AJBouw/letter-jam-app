@@ -8,7 +8,7 @@ export default defineConfig({
         emptyOutDir: true,
         lib: {
             entry: path.resolve(__dirname, 'src/feature-login-view.js'),
-            name: 'feature-login',
+            nickname: 'feature-login',
             // fileName: 'featurelogin.js' by default
             formats: ['es']
         }
